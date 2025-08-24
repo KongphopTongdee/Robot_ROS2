@@ -1,0 +1,1 @@
+print( "This file create for check link GitHub with this folder." )
