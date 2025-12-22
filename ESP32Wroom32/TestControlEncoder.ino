@@ -54,9 +54,13 @@ void setMotorSpeed( int speedMotor ){
         ledcWrite( PWMpin, limitSpeed );
     }
 }
+void displayOutput(){
+    // Print serial count
+    Serial.println( "Encoder count: " + String( encoder.getCount() ) );
+}
 
 // Create counter function similar to delay function which using the pointer
-void similarDelay( int valueTimer, void (*func)(int), int inputValueFunc ){
+void similarDelaySetMotor( int valueTimer, void (*func)(int), int inputValueFunc ){
     // Time fucntion
     unsigned long currentMillis = millis();
     unsigned long previousMillis = 0;
@@ -65,10 +69,20 @@ void similarDelay( int valueTimer, void (*func)(int), int inputValueFunc ){
         
         // Call function which using pointer
         func( inputValueFunc );
-        
-        // Print serial count
-        Serial.println( "Encoder count: " + string( encoder.getCount() ) );
+    }
+    
+}
 
+// Create counter function similar to delay function which using the pointer
+void similarDelay( int valueTimer, void (*func)(int) ){
+    // Time fucntion
+    unsigned long currentMillis = millis();
+    unsigned long previousMillis = 0;
+    if( currentMillis - previousMillis >= valueTimer ){
+        previousMillis = currentMillis;
+        
+        // Call function which using pointer
+        func();
     }
     
 }
@@ -90,8 +104,10 @@ void setup() {
 }
 
 void loop() {
+    similarDelay( 100, displayOutput );
+    
     // Call function timer and set speed motor
-    similarDelay( 2000, setMotorSpeed, 100 );
-    similarDelay( 2000, setMotorSpeed, 0 );
-    similarDelay( 2000, setMotorSpeed, -100 );
+    similarDelaySetMotor( 2000, setMotorSpeed, 100 );
+    similarDelaySetMotor( 2000, setMotorSpeed, 0 );
+    similarDelaySetMotor( 2000, setMotorSpeed, -100 );
 }
