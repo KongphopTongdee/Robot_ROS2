@@ -53,7 +53,6 @@ void setMotorSpeed( int speedMotor ){
         digitalWrite( PWMpin, 1 );
         ledcWrite( PWMpin, limitSpeed );
     }
-
 }
 
 // Create counter function similar to delay function which using the pointer
@@ -68,7 +67,7 @@ void similarDelay( int valueTimer, void (*func)(int), int inputValueFunc ){
         func( inputValueFunc );
         
         // Print serial count
-        Serial.println( "Encoder count: " + string( encoder.getCount() ) )
+        Serial.println( "Encoder count: " + string( encoder.getCount() ) );
 
     }
     
