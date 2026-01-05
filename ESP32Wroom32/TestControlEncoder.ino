@@ -14,8 +14,11 @@ ESP32Encoder encoder;
 const int pwmFrequency = 20000;          // Quite motor with more frequency in one duty cycle
 const int pwmResolution = 8;
 
-// unsigned long currentMillis = millis();
-// unsigned long previousMillis = 0;
+// Declare the PID config
+int pos = 0;
+long prevT = 0;
+float e_prev = 0;
+float e_integral = 0;
 
 // Create function limit value
 int limitValue( int inputValue, int minValue, int maxValue ){
@@ -53,7 +56,7 @@ void setMotorSpeed( int speedMotor ){
     }
     // if value is zero => stop motor
     else if( limitSpeed == 0 ){
-        digitalWrite( PWMpin, 1 );
+        digitalWrite( DIRpin, 1 );
         ledcWrite( PWMpin, limitSpeed );
     }
 }
@@ -64,9 +67,9 @@ void displayCount(){
 }
 
 // Create counter function similar to delay function which visualize the count of encoder
-void displayAndDelay( int valueTimer ){
-    //Time function
-    unsigned long currentMillis = millis();
+void displayPositionEvery( int valueTimer ){
+  //Time function
+  unsigned long currentMillis = millis();
 	unsigned long previousMillis = 0;
 	if( currentMillis - previousMillis >= valueTimer ){
 		previousMillis = currentMillis;
@@ -99,7 +102,7 @@ void setup() {
   encoder.attachFullQuad( encoderD3, encoderD2 );
   encoder.clearCount();
   // set count value
-  encoder.setCount( 666 );
+  encoder.setCount( 0 );
 
   // Setup Motor( ledcLibrary )
   pinMode(DIRpin, OUTPUT);
@@ -108,17 +111,51 @@ void setup() {
 }
 
 void loop() {	
-	// Call function timer and set speed motor
-    displayAndDelay( 2000 );
-    // for( int iteration = 0; iteration <= 5; iteration++ ){
-    //     similarDelay( 5000, setMotorSpeed, 100 );
-    //     similarDelay( 10000, setMotorSpeed, 0 );
-    //     similarDelay( 15000, setMotorSpeed, -100 );
-    //     similarDelay( 20000, setMotorSpeed, 0 );
-    //     // previousMillis = currentMillis;   
-    // }
-    similarDelay( 5000, setMotorSpeed, 100 );
-    similarDelay( 10000, setMotorSpeed, 0 );
-    similarDelay( 15000, setMotorSpeed, -100 );
-    similarDelay( 20000, setMotorSpeed, 0 );
+    // Call function timer and set speed motor
+    // similarDelay( 5000, setMotorSpeed, 100 );
+    // similarDelay( 10000, setMotorSpeed, 0 );
+    // similarDelay( 15000, setMotorSpeed, -100 );
+    // similarDelay( 20000, setMotorSpeed, 0 );
+    // Call function visualizatio position
+    displayPositionEvery( 2000 );
+
+    // Set target position
+    int target = 1200;
+    // int target = 250*sin( prevT / 1.0e6 );
+
+    // PID constants
+    float kp = 1;
+    float kd = 0.025;
+    float ki = 0;
+
+    // Time difference
+    long currT = micros();
+    long et = currT - prevT;
+    // Change unit from microsecond to second
+    float deltaT = ( ( float )( currT - prevT ) )/1.0e6;
+    prevT = currT;
+
+    // Error
+    int e = pos - target;
+
+    // Derivative 
+    float dedt = ( e - e_prev )/( deltaT );
+
+    // Integral
+    e_integral = e_integral + e*deltaT;
+
+    // Control signal
+    float u = kp*e + kd*dedt + ki*e_integral;
+
+    // Signal the motor
+    setMotorSpeed( u );
+
+    // Store previous error
+    e_prev = e;
+
+    Serial.print( target );
+    Serial.print( " " );
+    Serial.print( pos );
+    Serial.println();
+
 }
