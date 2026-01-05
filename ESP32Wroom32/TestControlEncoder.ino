@@ -79,6 +79,14 @@ void displayPositionEvery( int valueTimer ){
 	}
 
 }
+// Create function: motor control using PID. 
+void PIDControl( int targetPos, float PValue, float IValue, float DValue ){
+
+}
+
+void PIDControlAutoTune( int targetPos ){
+    // This function was using differential and integral to auto tune PID value
+}
 
 // Create counter function similar to delay function which using the pointer to another function
 void similarDelay( int valueTimer, void (*func)(int), int inputValueFunc ){
@@ -118,44 +126,5 @@ void loop() {
     // similarDelay( 20000, setMotorSpeed, 0 );
     // Call function visualizatio position
     displayPositionEvery( 2000 );
-
-    // Set target position
-    int target = 1200;
-    // int target = 250*sin( prevT / 1.0e6 );
-
-    // PID constants
-    float kp = 1;
-    float kd = 0.025;
-    float ki = 0;
-
-    // Time difference
-    long currT = micros();
-    long et = currT - prevT;
-    // Change unit from microsecond to second
-    float deltaT = ( ( float )( currT - prevT ) )/1.0e6;
-    prevT = currT;
-
-    // Error
-    int e = pos - target;
-
-    // Derivative 
-    float dedt = ( e - e_prev )/( deltaT );
-
-    // Integral
-    e_integral = e_integral + e*deltaT;
-
-    // Control signal
-    float u = kp*e + kd*dedt + ki*e_integral;
-
-    // Signal the motor
-    setMotorSpeed( u );
-
-    // Store previous error
-    e_prev = e;
-
-    Serial.print( target );
-    Serial.print( " " );
-    Serial.print( pos );
-    Serial.println();
 
 }
