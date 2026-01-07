@@ -14,11 +14,6 @@ ESP32Encoder encoder;
 const int pwmFrequency = 20000;          // Quite motor with more frequency in one duty cycle
 const int pwmResolution = 8;
 
-// Declare the PID config
-int pos = 0;
-long prevT = 0;
-float e_prev = 0;
-float e_integral = 0;
 
 // Create function limit value
 int limitValue( int inputValue, int minValue, int maxValue ){
@@ -79,9 +74,21 @@ void displayPositionEvery( int valueTimer ){
 	}
 
 }
-// Create function: motor control using PID. 
-void PIDControl( int targetPos, float PValue, float IValue, float DValue ){
 
+// Declare the PID config
+double kp, ki, kd;
+double targetPoint;
+double dt, lastTime;
+double integral, previous, output = 0; 
+
+// Create function: motor control using PID. 
+double PIDControl( double error ){
+    double proportional = error;
+    integral += error * dt;
+    double derivative = ( error - previous ) / dt;
+    previous = error;
+    double output = ( kp * proportional ) + ( ki * integral ) + ( kd * derivative );
+    return output;
 }
 
 void PIDControlAutoTune( int targetPos ){
@@ -103,19 +110,26 @@ void similarDelay( int valueTimer, void (*func)(int), int inputValueFunc ){
 }
 
 void setup() {
-  Serial.begin(115200);
+    Serial.begin(115200);
 
-  // Setup motor encoder with pullup
-  ESP32Encoder::useInternalWeakPullResistors = puType::up;
-  encoder.attachFullQuad( encoderD3, encoderD2 );
-  encoder.clearCount();
-  // set count value
-  encoder.setCount( 0 );
+    // Setup motor encoder with pullup
+    ESP32Encoder::useInternalWeakPullResistors = puType::up;
+    encoder.attachFullQuad( encoderD3, encoderD2 );
+    encoder.clearCount();
+    // set count value
+    encoder.setCount( 0 );
 
-  // Setup Motor( ledcLibrary )
-  pinMode(DIRpin, OUTPUT);
-  //   After esp32 core >= v.3 use this code:
-  ledcAttach(PWMpin, pwmFrequency, pwmResolution);
+    // Setup Motor( ledcLibrary )
+    pinMode(DIRpin, OUTPUT);
+    //   After esp32 core >= v.3 use this code:
+    ledcAttach(PWMpin, pwmFrequency, pwmResolution);
+
+    // Set config PID
+    kp = 0.8;
+    ki = 0.2;
+    kd = 0.001;
+    targetPoint = 1200.00;
+    lastTime = 0;
 }
 
 void loop() {	
@@ -125,6 +139,27 @@ void loop() {
     // similarDelay( 15000, setMotorSpeed, -100 );
     // similarDelay( 20000, setMotorSpeed, 0 );
     // Call function visualizatio position
-    displayPositionEvery( 2000 );
+    // displayPositionEvery( 2000 );
+
+    // Track time stamp
+    double now = millis();
+    // Convert into second
+    dt = ( now - lastTime ) / 1000.00;
+    lastTime = now;
+
+    // Find the actual position
+    double actual = ( double )encoder.getCount();
+    double error = targetPoint - actual;
+    output = PIDControl( error );
+
+    // The output need to become the pulse width modulation
+    setMotorSpeed( output );
+
+    // Visualization
+    Serial.print( targetPoint );
+    Serial.print( "," );
+    Serial.println( actual );
+
+    delay( 300 );
 
 }
