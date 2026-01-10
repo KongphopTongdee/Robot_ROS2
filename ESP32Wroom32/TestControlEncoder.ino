@@ -1,14 +1,21 @@
 #include <ESP32Encoder.h>
 #include <Arduino.h>
 
-// Pin usage => (32 = encoderD3), (33 = encoderD2), (25 = PWM), (26 = Dir)
-#define PWMpin          25
-#define DIRpin          26
-#define encoderD3       32
-#define encoderD2       33
+// Pin usage 1 motor => (32 = encoderD3MotorLeft), (33 = encoderD2MotorLeft), (25 = PWM), (26 = Dir)
+#define PWMpinMotorLeft        25
+#define DIRpinMotorLeft        26
+#define encoderD3MotorLeft     32
+#define encoderD2MotorLeft     33
+// Pin usage 2 motor => (13 = encoderD3MotorLeft), (14 = encoderD2MotorLeft), (16 = PWM), (4 = Dir)
+#define PWMpinMotorRight        16
+#define DIRpinMotorRight        4
+#define encoderD3MotorRight     13
+#define encoderD2MotorRight     14
+
 
 // Declare class for encoder
-ESP32Encoder encoder;
+ESP32Encoder encoderLeft;
+ESP32Encoder encoderRight;
 
 // Declare the setup motor drive board
 const int pwmFrequency = 20000;          // Quite motor with more frequency in one duty cycle
@@ -31,34 +38,36 @@ int limitValue( int inputValue, int minValue, int maxValue ){
 }
 
 // Function for control speed of motor
-void setMotorSpeed( int speedMotor ){
+void setMotorSpeed( int DIRPinInput, int PWMPinInput, int speedMotor ){
     int limitSpeed = limitValue( speedMotor, -255, 255 );
     
     // if value is posible => motor forward
     if( limitSpeed > 0 ){
         // Motor forward
-        digitalWrite( DIRpin, 1 );
+        digitalWrite( DIRPinInput, 1 );
         // Create pulse width modulation function
-        ledcWrite( PWMpin, limitSpeed );
+        ledcWrite( PWMPinInput, limitSpeed );
     }
     
     // if value is negative => motor reverse
     else if( limitSpeed < 0 ){
         // Motor reverse
-        digitalWrite( DIRpin, 0 );
+        digitalWrite( DIRPinInput, 0 );
         // Create pulse width modulation function
-        ledcWrite( PWMpin, -limitSpeed );
+        ledcWrite( PWMPinInput, -limitSpeed );
     }
     // if value is zero => stop motor
     else if( limitSpeed == 0 ){
-        digitalWrite( DIRpin, 1 );
-        ledcWrite( PWMpin, limitSpeed );
+        digitalWrite( DIRPinInput, 1 );
+        ledcWrite( PWMPinInput, limitSpeed );
     }
 }
 
+// Create output function for visualize the encoder position
 void displayCount(){
 	// Print serial count
-	Serial.println( "Encoder count: " + String( encoder.getCount() ) );
+	Serial.println( "Encoder count motor left: " + String( encoderLeft.getCount() ) );
+    Serial.println( "Encoder count motor right: " + String( encoderRight.getCount() ) );
 }
 
 // Create counter function similar to delay function which visualize the count of encoder
@@ -79,7 +88,8 @@ void displayPositionEvery( int valueTimer ){
 double kp, ki, kd;
 double targetPoint;
 double dt, lastTime;
-double integral, previous, output = 0; 
+double integral, previous; 
+double outputLeft = 0, outputRight = 0; 
 
 // Create function: motor control using PID. 
 double PIDControl( double error ){
@@ -91,20 +101,16 @@ double PIDControl( double error ){
     return output;
 }
 
-void PIDControlAutoTune( int targetPos ){
-    // This function was using differential and integral to auto tune PID value
-}
-
 // Create counter function similar to delay function which using the pointer to another function
-void similarDelay( int valueTimer, void (*func)(int), int inputValueFunc ){
-	// Time fucntion
+void similarDelay( int valueTimer, void (*func)( int )( int )( int ), int inputValue1, int inputValue2, int inputValue3 ){	
+    // Time fucntion
 	unsigned long currentMillis = millis();
 	unsigned long previousMillis = 0;
 	if( currentMillis - previousMillis >= valueTimer ){
 		previousMillis = currentMillis;
 		
 		// Call function which using pointer
-		func( inputValueFunc );
+		func( inputValue1, inputValue2, inputValue3 );
 	}
     
 }
@@ -114,15 +120,22 @@ void setup() {
 
     // Setup motor encoder with pullup
     ESP32Encoder::useInternalWeakPullResistors = puType::up;
-    encoder.attachFullQuad( encoderD3, encoderD2 );
-    encoder.clearCount();
+    encoderLeft.attachFullQuad( encoderD3MotorLeft, encoderD2MotorLeft );
+    encoderLeft.clearCount();
+    encoderRight.attachFullQuad( encoderD3MotorRight,encoderD2MotorRight );
+    encoderRight.clearCount();
+    
     // set count value
-    encoder.setCount( 0 );
+    encoderLeft.setCount( 0 );
+    encoderRight.setCount( 0 );
 
     // Setup Motor( ledcLibrary )
-    pinMode(DIRpin, OUTPUT);
+    pinMode( DIRpinMotorLeft, OUTPUT );
+    pinMode( DIRpinMotorRight, OUTPUT );
+    
     //   After esp32 core >= v.3 use this code:
-    ledcAttach(PWMpin, pwmFrequency, pwmResolution);
+    ledcAttach( PWMpinMotorLeft, pwmFrequency, pwmResolution );
+    ledcAttach( PWMpinMotorRight, pwmFrequency, pwmResolution  );
 
     // Set config PID
     kp = 0.8;
@@ -134,10 +147,10 @@ void setup() {
 
 void loop() {	
     // Call function timer and set speed motor
-    // similarDelay( 5000, setMotorSpeed, 100 );
-    // similarDelay( 10000, setMotorSpeed, 0 );
-    // similarDelay( 15000, setMotorSpeed, -100 );
-    // similarDelay( 20000, setMotorSpeed, 0 );
+    // similarDelay( 5000, setMotorSpeed, DIRpinMotorLeft, PWMpinMotorLeft, 100 );
+    // similarDelay( 10000, setMotorSpeed, DIRpinMotorLeft, PWMpinMotorLeft, 0 );
+    // similarDelay( 15000, setMotorSpeed, DIRpinMotorLeft, PWMpinMotorLeft, -100 );
+    // similarDelay( 20000, setMotorSpeed, DIRpinMotorLeft, PWMpinMotorLeft, 0 );
     // Call function visualizatio position
     // displayPositionEvery( 2000 );
 
@@ -148,18 +161,24 @@ void loop() {
     lastTime = now;
 
     // Find the actual position
-    double actual = ( double )encoder.getCount();
-    double error = targetPoint - actual;
-    output = PIDControl( error );
+    double actualLeft = ( double )encoderLeft.getCount();
+    double errorLeft = targetPoint - actualLeft;
+    outputLeft = PIDControl( errorLeft );
+    double actualRight = ( double )encoderRight.getCount();
+    double errorRight = targetPoint - actualRight;
+    outputRight = PIDControl( errorRight );
 
     // The output need to become the pulse width modulation
-    setMotorSpeed( output );
+    setMotorSpeed( DIRpinMotorLeft, PWMpinMotorLeft, outputLeft );
+    setMotorSpeed( DIRpinMotorRight, PWMpinMotorRight, outputRight );
 
     // Visualization
     Serial.print( targetPoint );
     Serial.print( "," );
-    Serial.println( actual );
+    Serial.println( actualLeft );
+    Serial.print( targetPoint );
+    Serial.print( "," );
+    Serial.println( actualRight );
 
     delay( 300 );
-
 }
