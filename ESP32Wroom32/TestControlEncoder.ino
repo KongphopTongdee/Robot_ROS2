@@ -92,7 +92,7 @@ double integral, previous;
 double outputLeft = 0, outputRight = 0; 
 
 // Create function: motor control using PID. 
-double PIDControl( double error ){
+double PIDPositioinControl( double error ){
     double proportional = error;
     integral += error * dt;
     double derivative = ( error - previous ) / dt;
@@ -163,10 +163,10 @@ void loop() {
     // Find the actual position
     double actualLeft = ( double )encoderLeft.getCount();
     double errorLeft = targetPoint - actualLeft;
-    outputLeft = PIDControl( errorLeft );
+    outputLeft = PIDPositioinControl( errorLeft );
     double actualRight = ( double )encoderRight.getCount();
     double errorRight = targetPoint - actualRight;
-    outputRight = PIDControl( errorRight );
+    outputRight = PIDPositioinControl( errorRight );
 
     // The output need to become the pulse width modulation
     setMotorSpeed( DIRpinMotorLeft, PWMpinMotorLeft, outputLeft );
