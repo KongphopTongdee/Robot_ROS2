@@ -19,7 +19,7 @@ ESP32Encoder encoderRight;
 
 // Declare the setup motor drive board
 const int pwmFrequency = 20000;          // Quite motor with more frequency in one duty cycle
-const int pwmResolution = 8;
+const int pwmResolution = 8;               // The maximum resolution to input motor speed ( max 12 bit ) -> 0[min speed adjust]-255[max speed adjust] = 0[min speed adjust]-4095[max speed adjust]  
 
 
 // Create function limit value
@@ -101,19 +101,19 @@ double PIDPositioinControl( double error ){
     return output;
 }
 
-// Create counter function similar to delay function which using the pointer to another function
-void similarDelay( int valueTimer, void (*func)( int )( int )( int ), int inputValue1, int inputValue2, int inputValue3 ){	
-    // Time fucntion
-	unsigned long currentMillis = millis();
-	unsigned long previousMillis = 0;
-	if( currentMillis - previousMillis >= valueTimer ){
-		previousMillis = currentMillis;
+// // Create counter function similar to delay function which using the pointer to another function
+// void similarDelay( int valueTimer, void (*func)( int )( int )( int ), int inputValue1, int inputValue2, int inputValue3 ){	
+//     // Time fucntion
+// 	unsigned long currentMillis = millis();
+// 	unsigned long previousMillis = 0;
+// 	if( currentMillis - previousMillis >= valueTimer ){
+// 		previousMillis = currentMillis;
 		
-		// Call function which using pointer
-		func( inputValue1, inputValue2, inputValue3 );
-	}
+// 		// Call function which using pointer
+// 		func( inputValue1, inputValue2, inputValue3 );
+// 	}
     
-}
+// }
 
 void setup() {
     Serial.begin(115200);
@@ -173,11 +173,14 @@ void loop() {
     setMotorSpeed( DIRpinMotorRight, PWMpinMotorRight, outputRight );
 
     // Visualization
+
     Serial.print( targetPoint );
     Serial.print( "," );
+    Serial.print( "Position Left : " );
     Serial.println( actualLeft );
     Serial.print( targetPoint );
     Serial.print( "," );
+    Serial.print( "Position Right : " );
     Serial.println( actualRight );
 
     delay( 300 );
