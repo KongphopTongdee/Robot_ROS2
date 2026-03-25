@@ -1,0 +1,22 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${workspaceFolder}/.vscode/browse.vc.db",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/kongphop666/Desktop/Robot_ROS2_Lidar/Robot_ROS2/SoftwareFile/install/micro_ros_agent/include/**",
+        "/opt/ros/humble/include/**",
+        "/home/kongphop666/Desktop/Robot_ROS2_Lidar/Robot_ROS2/SoftwareFile/src/micro-ROS-Agent/micro_ros_agent/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ros2",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++17"
+    }
+  ],
+  "version": 4
+}

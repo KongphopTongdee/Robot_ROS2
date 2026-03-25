@@ -1,0 +1,19 @@
+{
+    "ROS2.distro": "humble",
+    "python.autoComplete.extraPaths": [
+        "/home/kongphop666/Desktop/Robot_ROS2_Lidar/Robot_ROS2/SoftwareFile/build/diff_drive_3_legs",
+        "/home/kongphop666/Desktop/Robot_ROS2_Lidar/Robot_ROS2/SoftwareFile/install/diff_drive_3_legs/lib/python3.10/site-packages",
+        "/home/kongphop666/Desktop/Robot_ROS2_Lidar/Robot_ROS2/Ros2WsTutorial/build/control_robot_tutorial",
+        "/home/kongphop666/Desktop/Robot_ROS2_Lidar/Robot_ROS2/Ros2WsTutorial/install/control_robot_tutorial/lib/python3.10/site-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/kongphop666/Desktop/Robot_ROS2_Lidar/Robot_ROS2/SoftwareFile/build/diff_drive_3_legs",
+        "/home/kongphop666/Desktop/Robot_ROS2_Lidar/Robot_ROS2/SoftwareFile/install/diff_drive_3_legs/lib/python3.10/site-packages",
+        "/home/kongphop666/Desktop/Robot_ROS2_Lidar/Robot_ROS2/Ros2WsTutorial/build/control_robot_tutorial",
+        "/home/kongphop666/Desktop/Robot_ROS2_Lidar/Robot_ROS2/Ros2WsTutorial/install/control_robot_tutorial/lib/python3.10/site-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ]
+}

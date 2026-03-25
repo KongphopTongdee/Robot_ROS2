@@ -1,0 +1,18 @@
+################################################################################
+# ROS2 build artifacts
+################################################################################
+build/
+install/
+log/
+
+################################################################################
+# OS files
+################################################################################
+# src/.vscode/browse.vc.db
+# src/control_robot_tutorial/.vscode/browse.vc.db
+src/.vscode/*.db
+src/control_robot_tutorial/.vscode/*.db
+.vscode/*.db
+.vscode/*.db-shm
+.vscode/*.db-wal
+*.opendb

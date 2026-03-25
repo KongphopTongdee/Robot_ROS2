@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="https://www.ros.org/wiki/xacro" name="robot">
+
+    <!-- Include the relative robot description file -->
+    <xacro:include filename="robot_description.xacro" />
+    
+    <!-- Include the relative sensor file -->
+    <!-- <xacro:include filename="lidar_sensor.xacro" /> -->
+   
+
+</robot>

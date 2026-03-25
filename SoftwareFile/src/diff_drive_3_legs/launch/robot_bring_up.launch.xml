@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- Call node of micro-ROS which on the second port of USB -->
+    <node pkg="micro_ros_agent" exec="micro_ros_agent" name="micro_ROS" args="serial --dev /dev/ttyUSB1" />
+</launch>

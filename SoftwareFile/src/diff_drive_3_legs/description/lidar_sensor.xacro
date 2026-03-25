@@ -1,0 +1,106 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="https://www.ros.org/wiki/xacro" name="lidar_sensor">
+
+    <!-- Import the main file of robot_description.xacro -->
+    <xacro:include filename="robot_description.xacro"/>
+
+
+    <!-- **********Declare variable********** -->
+    <!-- Define the visual/collision/inertia variable for boxRplidar_link -->
+    <xacro:property name="boxRplidar_width" value="0.0556" />
+    <xacro:property name="boxRplidar_length" value="0.0556" />
+    <xacro:property name="boxRplidar_height" value="0.0231" />
+    <xacro:property name="xOriboxRplidarLink" value="0.0" />
+    <xacro:property name="yOriboxRplidarLink" value="0.0" />
+    <xacro:property name="zOriboxRplidarLink" value="0.0" />
+    <xacro:property name="rollOriboxRplidarLink" value="0.0" />
+    <xacro:property name="pitchOriboxRplidarLink" value="0.0" />
+    <xacro:property name="yallOriboxRplidarLink" value="0.0" />
+    <!-- Define the variable for boxRplidar_joint -->
+    <xacro:property name="xOriboxRplidarJoint" value="0.0" />
+    <xacro:property name="yOriboxRplidarJoint" value="0.0" />
+    <xacro:property name="zOriboxRplidarJoint" value="0.0" />
+    <xacro:property name="rollOriboxRplidarJoint" value="0.0" />
+    <xacro:property name="pitchOriboxRplidarJoint" value="0.0" />
+    <xacro:property name="yallOriboxRplidarJoint" value="0.0" />
+
+    <!-- Define the visual/collision/inertia variable for cameraRplidar_link -->
+    <xacro:property name="camera_radius" value="0.02525" />
+    <xacro:property name="camera_width" value="0.0182" />
+    <xacro:property name="xOriLCameraLink" value="0.0" />
+    <xacro:property name="yOriLCameraLink" value="0.0" />
+    <xacro:property name="zOriLCameraLink" value="0.0" />
+    <xacro:property name="rollOriLCameraLink" value="0.0" />
+    <xacro:property name="pitchOriLCameraLink" value="0.0" />
+    <xacro:property name="yallOriLCameraLink" value="0.0" />
+    <!-- Define the variable for cameraRplidar_joint -->
+    <xacro:property name="xOriCameraRplidarJoint" value="0.0" />
+    <xacro:property name="yOriCameraRplidarJoint" value="0.0" />
+    <xacro:property name="zOriCameraRplidarJoint" value="${boxRplidar_height}" />
+    <xacro:property name="rollOriCameraRplidarJoint" value="0.0" />
+    <xacro:property name="pitchOriCameraRplidarJoint" value="0.0" />
+    <xacro:property name="yallOriCameraRplidarJoint" value="0.0" />
+
+
+    <!-- **********Coding here********** -->
+    <!-- Test with world link -->
+    <link name="world">
+        
+    </link>
+
+    <!-- Create the boxRplidar_joint -->
+    <joint name="boxRplidar_joint" type="fixed">
+        <origin xyz="${xOriboxRplidarJoint} ${yOriboxRplidarJoint} ${zOriboxRplidarJoint}" rpy="${rollOriboxRplidarJoint} ${pitchOriboxRplidarJoint} ${yallOriboxRplidarJoint}"/>
+        <parent link="world"/>
+        <child link="boxRplidar_link"/>
+    </joint>
+
+    <!-- Create the boxRplidar_link -->
+    <link name="boxRplidar_link">
+        <visual>
+            <xacro:box_visual length="${boxRplidar_length}" width="${boxRplidar_width}" height="${boxRplidar_height}" color="white">
+                <origin xyz="${xOriboxRplidarLink} ${yOriboxRplidarLink} ${zOriboxRplidarLink}" rpy="${rollOriboxRplidarLink} ${pitchOriboxRplidarLink} ${yallOriboxRplidarLink}"/>
+            </xacro:box_visual>
+        </visual>
+        <collision>
+            <xacro:box_collision length="${boxRplidar_length}" width="${boxRplidar_width}" height="${boxRplidar_height}">
+                <origin xyz="${xOriboxRplidarLink} ${yOriboxRplidarLink} ${zOriboxRplidarLink}" rpy="${rollOriboxRplidarLink} ${pitchOriboxRplidarLink} ${yallOriboxRplidarLink}"/>
+            </xacro:box_collision>    
+        </collision>
+        <inertial>
+            <xacro:box_inertia mass="1.0" x="0.0" y="0.0" z="0.0">
+                <origin xyz="${xOriboxRplidarLink} ${yOriboxRplidarLink} ${zOriboxRplidarLink}" rpy="${rollOriboxRplidarLink} ${pitchOriboxRplidarLink} ${yallOriboxRplidarLink}"/>
+            </xacro:box_inertia>
+        </inertial>
+    </link>
+
+    <!-- Create the camera of cameraRplidar_joint -->
+    <joint name="cameraRplidar_joint" type="continuous">
+        <origin xyz="${xOricameraRplidarJoint} ${yOricameraRplidarJoint} ${zOricameraRplidarJoint}" rpy="${rollOricameraRplidarJoint} ${pitchOricameraRplidarJoint} ${yallOricameraRplidarJoint}"/>
+        <parent link="boxRplidar_link"/>
+        <child link="cameraRplidar_link"/>
+        <axis xyz="0.0 0.0 1.0"/>
+    </joint>
+
+    <!-- Create the camera of cameraRplidar_link -->
+    <link name="cameraRplidar_link">
+        <visual>
+            <xacro:cylinder_visual length="${camera_width}" radius="${camera_radius}" color="white">
+                <origin xyz="${xOriLCameraLink} ${yOriLCameraLink} ${zOriLCameraLink}" rpy="${rollOriLCameraLink} ${pitchOriLCameraLink} ${yallOriLCameraLink}"/>
+            </xacro:cylinder_visual>
+        </visual>
+        <collision>
+            <xacro:cylinder_collision length="${camera_width}" radius="${camera_radius}">
+                <origin xyz="${xOriLCameraLink} ${yOriLCameraLink} ${zOriLCameraLink}" rpy="${rollOriLCameraLink} ${pitchOriLCameraLink} ${yallOriLCameraLink}"/>
+            </xacro:cylinder_collision>
+        </collision>
+        <inertial>
+            <xacro:cylinder_inertia mass="1.0" radius="${camera_radius}">
+                <origin xyz="${xOriLCameraLink} ${yOriLCameraLink} ${zOriLCameraLink}" rpy="${rollOriLCameraLink} ${pitchOriLCameraLink} ${yallOriLCameraLink}"/>
+            </xacro:cylinder_inertia>
+        </inertial>
+    </link>
+
+
+
+</robot>
