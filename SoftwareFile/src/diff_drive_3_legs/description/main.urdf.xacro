@@ -5,7 +5,7 @@
     <xacro:include filename="robot_description.xacro" />
     
     <!-- Include the relative sensor file -->
-    <!-- <xacro:include filename="lidar_sensor.xacro" /> -->
+    <xacro:include filename="lidar_sensor.xacro" />
    
 
 </robot>

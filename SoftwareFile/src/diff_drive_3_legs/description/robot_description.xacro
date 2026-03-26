@@ -1,9 +1,6 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="https://www.ros.org/wiki/xacro" name="robot_lidar">
     <!-- **********Specific color********** -->
-    <material name="white">
-        <color rgba="1.0 1.0 1.0 1.0"/>
-    </material>
     <material name="orange">
         <color rgba="1.0 0.3 0.1 1.0"/>
     </material>
@@ -38,7 +35,7 @@
     <xacro:property name="yallOriBaseLink" value="0.0" />
 
     <!-- Define the variable for lwheel_joint -->
-    <xacro:property name="xOriLWheelJoint" value="0.0" />
+    <xacro:property name="xOriLWheelJoint" value="0.0539" />
     <xacro:property name="yOriLWheelJoint" value="0.15" />
     <xacro:property name="zOriLWheelJoint" value="0.0" />
     <xacro:property name="rollOriLWheelJoint" value="-${pi/2}" />
@@ -51,30 +48,30 @@
 
     <xacro:property name="xOriLWheelLink" value="0.0" />
     <xacro:property name="yOriLWheelLink" value="0.0" />
-    <xacro:property name="zOriLWheelLink" value="0.0" />
+    <xacro:property name="zOriLWheelLink" value="0.029" />
     <xacro:property name="rollOriLWheelLink" value="0.0" />
     <xacro:property name="pitchOriLWheelLink" value="0.0" />
     <xacro:property name="yallOriLWheelLink" value="0.0" />
 
     <!-- Define the variable for rwheel_joint -->
-    <xacro:property name="xOriRWheelJoint" value="0.0" />
-    <xacro:property name="yOriRWheelJoint" value="0.0" />
+    <xacro:property name="xOriRWheelJoint" value="0.0539" />
+    <xacro:property name="yOriRWheelJoint" value="-0.15" />
     <xacro:property name="zOriRWheelJoint" value="0.0" />
-    <xacro:property name="rollOriRWheelJoint" value="0.0" />
+    <xacro:property name="rollOriRWheelJoint" value="${pi/2}" />
     <xacro:property name="pitchOriRWheelJoint" value="0.0" />
     <xacro:property name="yallOriRWheelJoint" value="0.0" />
     <!-- Define the visual/collision/inertia variable for rwheel_link -->
     <xacro:property name="xOriRWheelLink" value="0.0" />
     <xacro:property name="yOriRWheelLink" value="0.0" />
-    <xacro:property name="zOriRWheelLink" value="0.0" />
+    <xacro:property name="zOriRWheelLink" value="0.029" />
     <xacro:property name="rollOriRWheelLink" value="0.0" />
     <xacro:property name="pitchOriRWheelLink" value="0.0" />
     <xacro:property name="yallOriRWheelLink" value="0.0" />
 
     <!-- Define the variable for support_base_joint -->
-    <xacro:property name="xOriSupportBaseJoint" value="0.0" />
+    <xacro:property name="xOriSupportBaseJoint" value="-0.06" />
     <xacro:property name="yOriSupportBaseJoint" value="0.0" />
-    <xacro:property name="zOriSupportBaseJoint" value="0.0" />
+    <xacro:property name="zOriSupportBaseJoint" value="-0.051" />
     <xacro:property name="rollOriSupportBaseJoint" value="0.0" />
     <xacro:property name="pitchOriSupportBaseJoint" value="0.0" />
     <xacro:property name="yallOriSupportBaseJoint" value="0.0" />
@@ -87,7 +84,7 @@
     <xacro:property name="zOriSupportBaseLink" value="0.0" />
     <xacro:property name="rollOriSupportBaseLink" value="0.0" />
     <xacro:property name="pitchOriSupportBaseLink" value="0.0" />
-    <xacro:property name="yallOriSupportBaseLink" value="0.0" />
+    <xacro:property name="yallOriSupportBaseLink" value="${pi/2}" />
 
 
     <!-- **********Macro function********** -->
@@ -199,16 +196,16 @@
     </link>
 
     <!-- Create the rwheel_joint -->
-    <!-- The continuous joint doesn't have the limit -->
-    <!-- <joint name="rwheel_joint" type="continuous">
+    <joint name="rwheel_joint" type="continuous">
         <origin xyz="${xOriRWheelJoint} ${yOriRWheelJoint} ${zOriRWheelJoint}" rpy="${rollOriRWheelJoint} ${pitchOriRWheelJoint} ${yallOriRWheelJoint}"/>
         <parent link="base_link"/>
         <child link="rwheel_link"/>
-        <axis xyz="0.0 0.0 0.0"/>
-    </joint> -->
+        <axis xyz="0.0 0.0 1.0"/>
+        <!-- The continuous joint doesn't have the limit -->
+    </joint>
     
     <!-- Create the rwheel_link -->
-    <!-- <link name="rwheel_link">
+    <link name="rwheel_link">
         <visual>
             <xacro:cylinder_visual length="${wheel_length}" radius="${wheel_radius}" color="blue">
                 <origin xyz="${xOriRWheelLink} ${yOriRWheelLink} ${zOriRWheelLink}" rpy="${rollOriRWheelLink} ${pitchOriRWheelLink} ${yallOriRWheelLink}"/>
@@ -224,17 +221,17 @@
                 <origin xyz="${xOriRWheelLink} ${yOriRWheelLink} ${zOriRWheelLink}" rpy="${rollOriRWheelLink} ${pitchOriRWheelLink} ${yallOriRWheelLink}"/>
             </xacro:cylinder_inertia>
         </inertial>
-    </link> -->
+    </link>
 
     <!-- Create the support_base_joint -->
-    <!-- <joint name="support_base_joint" type="fixed">
+    <joint name="support_base_joint" type="fixed">
         <origin xyz="${xOriSupportBaseJoint} ${yOriSupportBaseJoint} ${zOriSupportBaseJoint}" rpy="${rollOriSupportBaseJoint} ${pitchOriSupportBaseJoint} ${yallOriSupportBaseJoint}"/>
         <parent link="base_link"/>
         <child link="support_base_link"/>
-    </joint> -->
+    </joint>
 
     <!-- Create the support_base_link -->
-    <!-- <link name="support_base_link">
+    <link name="support_base_link">
         <visual>
             <xacro:box_visual length="${suport_base_length}" width="${support_base_width}" height="${suport_base_height}" color="orange">
                 <origin xyz="${xOriSupportBaseLink} ${yOriSupportBaseLink} ${zOriSupportBaseLink}" rpy="${rollOriSupportBaseLink} ${pitchOriSupportBaseLink} ${yallOriSupportBaseLink}"/>
@@ -250,18 +247,6 @@
                 <origin xyz="${xOriSupportBaseLink} ${yOriSupportBaseLink} ${zOriSupportBaseLink}" rpy="${rollOriSupportBaseLink} ${pitchOriSupportBaseLink} ${yallOriSupportBaseLink}"/>
             </xacro:box_inertia>
         </inertial>
-    </link> -->
+    </link>
 
 </robot>
-
-
-
-
-<!-- !!!Spare!!! -->
-<!-- <xacro:macro name="box_visual" params="length width height color *origin">
-        <xacro:insert_block name="origin"/>
-        <geometry>
-            <box size="${length} ${width} ${height}"/>
-        </geometry>
-        <material name="${color}" />
-    </xacro:macro> -->
