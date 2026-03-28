@@ -15,3 +15,8 @@ src/control_robot_tutorial/control_robot_tutorial/.vscode/*.db
 .vscode/*.db-shm
 .vscode/*.db-wal
 *.opendb
+
+################################################################################
+# Gazebo world config
+################################################################################
+src/control_robot_tutorial/config/gazebo_world/

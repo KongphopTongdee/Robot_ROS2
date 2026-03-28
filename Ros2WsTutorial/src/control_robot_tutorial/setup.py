@@ -18,6 +18,8 @@ setup(
         (os.path.join('share', package_name, 'description'),glob( os.path.join('description','*.xacro'))),
         # Add function to call calculate mesh
         (os.path.join('share', package_name, 'meshes'),glob('meshes/*')),
+        # Add function to call config world gazebo file
+        (os.path.join('share', package_name, 'config'),glob(os.path.join( 'config', 'gazebo_world/*.world' ))),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

@@ -53,6 +53,11 @@
         </xacro:inertial_box>
     </link>
 
+    <!-- Add color in the chassis_link in gazebo -->
+    <gazebo reference="chassis_link" >
+        <material>Gazebo/White</material>
+    </gazebo>
+
     <!-- Create the left wheel joint -->
     <joint name="left_wheel_joint" type="continuous">
         <origin xyz="0.0 0.175 0.0" rpy="-${pi/2} 0.0 0.0"/>
@@ -78,6 +83,11 @@
             <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
         </xacro:inertial_cylinder>
     </link>
+
+    <!-- Add color in the left_wheel_link in gazebo -->
+    <gazebo reference="left_wheel_link" >
+        <material>Gazebo/Blue</material>
+    </gazebo>
 
     <!-- Create the right wheel joint -->
     <joint name="right_wheel_joint" type="continuous">
@@ -105,6 +115,11 @@
         </xacro:inertial_cylinder>
     </link>
 
+    <!-- Add color in the right_wheel_link in gazebo -->
+    <gazebo reference="right_wheel_link" >
+        <material>Gazebo/Blue</material>
+    </gazebo>
+
     <!-- Create the caster joint -->
     <joint name="caster_joint" type="fixed">
         <origin xyz="0.24 0.0 0.0" rpy="0.0 0.0 0.0"/>
@@ -129,5 +144,13 @@
             <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
         </xacro:inertial_sphere>
     </link>
+
+    <!-- Add color in the caster_link in gazebo -->
+    <gazebo reference="caster_link" >
+        <material>Gazebo/Black</material>
+        <!-- Set the friction in gazebo to be slip -->
+        <mu1 value="0.001"/>
+        <mu2 value="0.001"/>
+    </gazebo>
 
 </robot>

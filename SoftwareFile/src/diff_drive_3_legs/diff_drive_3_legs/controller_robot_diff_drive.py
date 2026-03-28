@@ -30,8 +30,11 @@ class ControlRobotTeleop( Node ):
         # Display the mode of robot
         self.get_logger().info( "Set the robot to mode 2: Robot Control Teleop" )
 
-        # Create publisher for publish cmd_vel => condition in self.create_publisher( type of variable, name of the topic, queue size )
-        self.publisherVelocity = self.create_publisher( Twist, "/micro_ros_cmd_vel", 10 )
+        # Create publisher for publish micro_ros_cmd_vel => condition in self.create_publisher( type of variable, name of the topic, queue size )
+        self.publisherVelocityMicroROS = self.create_publisher( Twist, "/micro_ros_cmd_vel", 10 )
+        # Create publisher for publish micro_ros_cmd_vel => condition in self.create_publisher( type of variable, name of the topic, queue size )
+        self.publisherVelocityROS = self.create_publisher( Twist, "/cmd_vel", 10 )
+
 
         # Publish every x times => parameter in self.create_timer( time, callback function )
         self.timerVelocity = self.create_timer( 0.5, self.timer_callback )
@@ -112,7 +115,8 @@ class ControlRobotTeleop( Node ):
         self.get_logger().info( f"The value of linear: { cmd_vel_variable.linear.x } and angular: { cmd_vel_variable.angular.z }" )
         
         # Publish the cmd_vel to topic
-        self.publisherVelocity.publish( cmd_vel_variable )
+        self.publisherVelocityMicroROS.publish( cmd_vel_variable )
+        self.publisherVelocityROS.publish( cmd_vel_variable )
 
 
 

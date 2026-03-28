@@ -32,7 +32,7 @@ def generate_launch_description():
     )
 
 
-    # Launch!
+    # Launch! (with configuration use DeclareLaunchArgument)
     return LaunchDescription([
         DeclareLaunchArgument(
             'use_sim_time',
