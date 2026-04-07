@@ -32,6 +32,9 @@
 // Import the library for using PID control
 #include <PID_v2.h>
 
+// Import the library for using mathematic
+#include <math.h>
+
 // ---------- ROS object declarations ----------
 
 // Create subscriber object and message type.( subscribe => cmd_vel )
@@ -107,8 +110,10 @@ ESP32Encoder encoderRight;
 // ---------- Declare usage variable ----------
 
 // Create setup motor driver board
-const int PWM_FREQUENCY = 20000;  // Quite motor with more frequency in one duty cycle.
-const int PWM_RESOLUTION = 15;     // The maximum resolution to input motor speed. ( max 12 bit ) -> 0[min speed adjust]-255[max speed adjust] = 0[min speed adjust]-4095[max speed adjust]
+// !! Warning !! If higher pwm_resolution -> lower pwm_frequency. If lower pwm_resolution -> higher pwm_frequency. ( Calculate on this equation f_pwm = f_clock/2^^resolution )
+// Max choice => ( PWM_FREQUENCY = 312kHz, PWM_RESOLUTION = 8bit )( PWM_FREQUENCY = 78kHz, PWM_RESOLUTION = 10bit )( PWM_FREQUENCY = 19kHz, PWM_RESOLUTION = 12bit )( PWM_FREQUENCY = 1.2kHz, PWM_RESOLUTION = 16bit )( PWM_FREQUENCY = 76Hz, PWM_RESOLUTION = 20bit )
+const int PWM_FREQUENCY = 10000;  // Quite motor with more frequency in one duty cycle.
+const int PWM_RESOLUTION = 10;   // This pwm pinout limit with 20 bit
 
 // Create global variable storage of robot mode in type of int
 int MODE_ROBOT = 0;
@@ -116,20 +121,24 @@ int MODE_ROBOT = 0;
 // Define the PID variable for tuning motor
 double SETPOINT_LEFT = 0.0, INPUT_LEFT = 0.0, OUTPUT_LEFT = 0.0, SETPOINT_RIGHT = 0.0, INPUT_RIGHT = 0.0, OUTPUT_RIGHT = 0.0;
 // Define the aggressive and conservative Tuning parameter
-double aggKp = 4.0, aggKi = 0.2, aggKd = 1.0;
-double consKp = 1.0, consKi = 0.05, consKd = 0.25;
+double consKp = 3.5, consKi = 2.0, consKd = 0.001;          // Inside the steady state
+double aggKp = 6.0, aggKi = 5.0, aggKd = 0.0;               // Before the steady state
 // Declare the ticking count encoder ( avoid tick with fast hz )
 unsigned long currtick = 0;
 
+// Declare the robot specification of the robot.
+float WIDTH_ROBOT = 0.398;
+float WHEEL_DIAMETER = 0.123;
+
+// Declare the pulse per revolute of full speed
+const int PPR = 480; 
+
+// Create variable for caluculate diff drive equation
+float convert_cmd_vel_left = 0.0; 
+float convert_cmd_vel_right = 0.0;
 // Create the subscription value speed motor from /cmd_vel
-int16_t subscription_speed_left = 0;
-int16_t subscription_speed_right = 0;
-
-// Declare the robot width(meter) from lwheel_joint to rwheel_joint in xacro 
-float WIDTH_ROBOT = 0.3;
-
-// Declare the variable of accelerate value on convert /cmd_vel into speed_left and speed_right
-int SCALE_ACCELERATE_VELOCITY = 1;
+int16_t SUBSCRIPTION_SPEED_LEFT = 0;
+int16_t SUBSCRIPTION_SPEED_RIGHT = 0;
 
 // ---------- PID initial tuning parameters ----------
 
@@ -176,18 +185,15 @@ void subscriberTwist_callback(const void *msgin) {
   // Declare the valiable to storage the cmd_vel from subscriber. ( Convert generic pointer ( msgin ) into a Twist message pointer )
   const geometry_msgs__msg__Twist *msg_twist_cmd_vel = (const geometry_msgs__msg__Twist *)msgin;
 
-
-  // Get in the function of control robot, If it was contorl robot mode.
-  controlRobotTeleop( msg_twist_cmd_vel->linear.x, msg_twist_cmd_vel->angular.z, MODE_ROBOT );
-
   // Convert the Twist velocity m/s into speed of each motor velocity by using diff drive equation
   // diff drive equation -> Vr = v + (L/2)w, Vl = v - (L/2)w
-  subscription_speed_left = ( msg_twist_cmd_vel->linear.x ) - ( ( WIDTH_ROBOT / 2 )*msg_twist_cmd_vel->angular.z );
-  subscription_speed_right = ( msg_twist_cmd_vel->linear.x ) + ( ( WIDTH_ROBOT / 2 )*msg_twist_cmd_vel->angular.z );
+  convert_cmd_vel_left = ( msg_twist_cmd_vel->linear.x ) - ( ( WIDTH_ROBOT / 2 ) * msg_twist_cmd_vel->angular.z );
+  convert_cmd_vel_right = ( msg_twist_cmd_vel->linear.x ) + ( ( WIDTH_ROBOT / 2 ) * msg_twist_cmd_vel->angular.z );
   
-  // Limit the velocity of pwm_resolution 15 bit motor ( linear limit = 0.5 m/s, angular limit = 0.75 rad/s )( 29800 pulse = 1.59719 m/s, then 0.75 m/s = 13994 pulse )
-  subscription_speed_left = constrain( subscription_speed_left * SCALE_ACCELERATE_VELOCITY, -14000 , 14000 );
-  subscription_speed_right = constrain( subscription_speed_left * SCALE_ACCELERATE_VELOCITY, -14000 , 14000 );
+  // Convert the speed m/s in each motor into pulse/sec( but this code calculate in term of 100ms, so divine by 10 )
+  SUBSCRIPTION_SPEED_LEFT = ( ( convert_cmd_vel_left * PPR ) / ( 2 * PI * ( WHEEL_DIAMETER / 2 ) ) ) / 10;
+  SUBSCRIPTION_SPEED_RIGHT = ( ( convert_cmd_vel_right * PPR ) / ( 2 * PI * ( WHEEL_DIAMETER / 2 ) ) ) / 10;
+  
 }
 
 void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
@@ -217,7 +223,7 @@ void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
 // Create function for control each motor.
 void setMotorSpeed(int DIRPinInput, int PWMPinInput, int speedMotor) {
   // Create limit speed of Motor, the maximum was base on PWM_RESOLUTION.( Generate PWM )
-  int limitSpeed = constrain(speedMotor, -14000, 14000);
+  int limitSpeed = constrain(speedMotor, -500, 500);
 
   // Check it was positive num => Motor will move forward.
   if (limitSpeed > 0) {
@@ -259,8 +265,8 @@ void PIDEncoderAdaptiveGap(){
   }
 
   // Set the new setpoint in PID ( using abs because it was calculate to scalar value only don't need to define the direction in PID )
-  PID_Left_Motor.Setpoint( abs( subscription_speed_left ) );
-  PID_Right_Motor.Setpoint( abs( subscription_speed_right ) );
+  PID_Left_Motor.Setpoint( abs( SUBSCRIPTION_SPEED_LEFT ) );
+  PID_Right_Motor.Setpoint( abs( SUBSCRIPTION_SPEED_RIGHT ) );
 
   // Create measure distance away from setpoint left motor
   double gapLeftMotor = abs( PID_Left_Motor.GetSetpoint() - INPUT_LEFT );
@@ -292,7 +298,7 @@ void PIDEncoderAdaptiveGap(){
 }
 
 // Create function for control motor with the navigation method
-void navigationMotorControl( int modeOfRobot ){
+void navigationMotorControl(){
   // Send out status control the robot.
   msg_string_status.data.data = "Start control robot using navigation.";
 
@@ -300,79 +306,67 @@ void navigationMotorControl( int modeOfRobot ){
   setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, 0);
   setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, 0);
 
-  // Check if it was in control robot mode
-  if ( modeOfRobot == 1 ) {
-    // Call the function PID adaptive gap
-    PIDEncoderAdaptiveGap();
+  // Call the function PID adaptive gap
+  PIDEncoderAdaptiveGap();
 
-    // Check the direction of motor left and control it 
-    if( subscription_speed_left > 0 ){
-      // Call the function setMotorSpeed using value OUTPUT_LEFT
-      setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, OUTPUT_LEFT );
-    } else if ( subscription_speed_left < 0 ){
-      // Call the function setMotorSpeed using value OUTPUT_LEFT
-      setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, -1*OUTPUT_LEFT );
-    } else {
-      // Call the function setMotorSpeed using value OUTPUT_LEFT
-      setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, 0 );
-    }
+  // Check the direction of motor left and control it 
+  if( SUBSCRIPTION_SPEED_LEFT > 0 ){
+    // Call the function setMotorSpeed using value OUTPUT_LEFT
+    setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, OUTPUT_LEFT );
+  } else if ( SUBSCRIPTION_SPEED_LEFT < 0 ){
+    // Call the function setMotorSpeed using value OUTPUT_LEFT
+    setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, -1*OUTPUT_LEFT );
+  } else {
+    // Call the function setMotorSpeed using value OUTPUT_LEFT
+    setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, 0 );
+  }
 
-    // Check the direction of motor right and control it 
-    if( subscription_speed_right > 0 ){
-      // Call the function setMotorSpeed using value OUTPUT_LEFT
-      setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, OUTPUT_RIGHT );
-    } else if ( subscription_speed_left < 0 ){
-      // Call the function setMotorSpeed using value OUTPUT_LEFT
-      setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, -1*OUTPUT_RIGHT );
-    } else {
-      // Call the function setMotorSpeed using value OUTPUT_LEFT
-      setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, 0 );
-    }
-
-
+  // Check the direction of motor right and control it 
+  if( SUBSCRIPTION_SPEED_RIGHT > 0 ){
+    // Call the function setMotorSpeed using value OUTPUT_LEFT
+    setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, OUTPUT_RIGHT );
+  } else if ( SUBSCRIPTION_SPEED_LEFT < 0 ){
+    // Call the function setMotorSpeed using value OUTPUT_LEFT
+    setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, -1*OUTPUT_RIGHT );
+  } else {
+    // Call the function setMotorSpeed using value OUTPUT_LEFT
+    setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, 0 );
   }
 }
 
 // Create function for recieve cmd_vel to control robot
-void controlRobotTeleop( int cmdVelLinearX, int cmdVelAngularZ, int modeOfRobot ) {
+void controlRobotTeleop( int cmdVelLinearX, int cmdVelAngularZ ) {
   // Send out status control the robot.
   msg_string_status.data.data = "Start control robot using teleop.";
-
-  // Using for debug only
-  msg__debug.data = modeOfRobot;
 
   // Setting the init velocity and angular velocity
   setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, 0);
   setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, 0);
 
-  // Check if it was in control robot mode
-  if ( modeOfRobot == 2 ) {
-    
-    // Check, If value of linear X was positive. ( Robot move forward )
-    if ((cmdVelLinearX > 0) && (cmdVelAngularZ == 0)) {
-      setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, 14000);
-      setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, 14000);
-    }
-    // Check, If value of linear X was negative. ( Robot move backward )
-    else if ((cmdVelLinearX < 0) && (cmdVelAngularZ == 0)) {
-      setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, -14000);
-      setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, -14000);
-    }
-    // Check, If value of linear X was negative. ( Robot turn left )
-    else if ((cmdVelLinearX == 0) && (cmdVelAngularZ < 0)) {
-      setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, -14000);
-      setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, 14000);
-    }
-    // Check, If value of linear X was negative. ( Robot move right )
-    else if ((cmdVelLinearX == 0) && (cmdVelAngularZ > 0)) {
-      setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, 14000);
-      setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, -14000);
-    }
-    // If there was't any match condition one of above.
-    else {
-      setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, 0);
-      setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, 0);
-    }
+  // Check, If value of linear X was positive. ( Robot move forward )
+  if ((cmdVelLinearX > 0) && (cmdVelAngularZ == 0)) {
+    setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, 500);
+    setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, 500);
+  }
+  // Check, If value of linear X was negative. ( Robot move backward )
+  else if ((cmdVelLinearX < 0) && (cmdVelAngularZ == 0)) {
+    setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, -500);
+    setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, -500);
+  }
+  // Check, If value of linear X was negative. ( Robot turn left )
+  else if ((cmdVelLinearX == 0) && (cmdVelAngularZ < 0)) {
+    setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, -500);
+    setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, 500);
+  }
+  // Check, If value of linear X was negative. ( Robot move right )
+  else if ((cmdVelLinearX == 0) && (cmdVelAngularZ > 0)) {
+    setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, 500);
+    setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, -500);
+  }
+  // If there was't any match condition one of above.
+  else {
+    setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, 0);
+    setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, 0);
   }
 }
 
@@ -512,6 +506,10 @@ void basicSetup() {
 }
 
 void PIDSetup(){
+  // Setup the output limit from PID refer limit from pwm_resolution ( Default = [ 0, 255 ] )
+  PID_Left_Motor.SetOutputLimits( 0, 1023 );
+  PID_Right_Motor.SetOutputLimits( 0, 1023 );
+
   // Setup the PID including( input, current output, and setpoint )
   PID_Left_Motor.Start( 0, 0, 0 );
   PID_Right_Motor.Start( 0, 0, 0 );
@@ -524,9 +522,13 @@ void setup() {
 
   // Call the function to setup micro-ROS
   microROSSetup();
+  // Call the function to setup encoder
   encoderSetup();
+  // Call the function to setup motor and pwm pin
   motorAndLedcSetup();
+  // Call the function to setup basic arduino ide
   basicSetup();
+  // Call the function to setup PID
   PIDSetup();
 }
 
@@ -547,4 +549,18 @@ void loop() {
   RCCHECK(rclc_executor_spin_some(
     &executor_publisher,  // Executro publisher object
     RCL_MS_TO_NS(100)));  // Allow excutor to run 10 hz
+
+  // Check the mode robot to select the control mode
+  if( MODE_ROBOT == 1 ){
+    // Get in the function of control robot by automation.
+    navigationMotorControl();
+
+  } else if( MODE_ROBOT == 2 ){
+    // Get in the function of control robot by teleop.
+    controlRobotTeleop( msg_twist_cmd_vel->linear.x, msg_twist_cmd_vel->angular.z );
+
+  } else{
+    // Debug if user didn't define the MODE_ROBOT
+    msg_string_status.data.data = "There wasn't match MODE_ROBOT or MODE_ROBOT was empty.";
+  }
 }

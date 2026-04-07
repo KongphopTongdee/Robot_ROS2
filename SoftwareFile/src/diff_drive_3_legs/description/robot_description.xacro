@@ -36,7 +36,7 @@
 
     <!-- Define the variable for lwheel_joint -->
     <xacro:property name="xOriLWheelJoint" value="0.0539" />
-    <xacro:property name="yOriLWheelJoint" value="0.15" />
+    <xacro:property name="yOriLWheelJoint" value="0.199" />
     <xacro:property name="zOriLWheelJoint" value="0.0" />
     <xacro:property name="rollOriLWheelJoint" value="-${pi/2}" />
     <xacro:property name="pitchOriLWheelJoint" value="0.0" />
@@ -44,18 +44,18 @@
     <!-- Define the visual/collision/inertia variable for lwheel_link -->
 
     <xacro:property name="wheel_radius" value="0.0615" />
-    <xacro:property name="wheel_length" value="0.068" />
+    <xacro:property name="wheel_length" value="0.069" />
 
     <xacro:property name="xOriLWheelLink" value="0.0" />
     <xacro:property name="yOriLWheelLink" value="0.0" />
-    <xacro:property name="zOriLWheelLink" value="0.029" />
+    <xacro:property name="zOriLWheelLink" value="-0.0145" />
     <xacro:property name="rollOriLWheelLink" value="0.0" />
     <xacro:property name="pitchOriLWheelLink" value="0.0" />
     <xacro:property name="yallOriLWheelLink" value="0.0" />
 
     <!-- Define the variable for rwheel_joint -->
     <xacro:property name="xOriRWheelJoint" value="0.0539" />
-    <xacro:property name="yOriRWheelJoint" value="-0.15" />
+    <xacro:property name="yOriRWheelJoint" value="-0.199" />
     <xacro:property name="zOriRWheelJoint" value="0.0" />
     <xacro:property name="rollOriRWheelJoint" value="${pi/2}" />
     <xacro:property name="pitchOriRWheelJoint" value="0.0" />
@@ -63,7 +63,7 @@
     <!-- Define the visual/collision/inertia variable for rwheel_link -->
     <xacro:property name="xOriRWheelLink" value="0.0" />
     <xacro:property name="yOriRWheelLink" value="0.0" />
-    <xacro:property name="zOriRWheelLink" value="0.029" />
+    <xacro:property name="zOriRWheelLink" value="-0.0145" />
     <xacro:property name="rollOriRWheelLink" value="0.0" />
     <xacro:property name="pitchOriRWheelLink" value="0.0" />
     <xacro:property name="yallOriRWheelLink" value="0.0" />
