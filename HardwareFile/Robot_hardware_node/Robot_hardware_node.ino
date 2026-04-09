@@ -193,6 +193,9 @@ void subscriberTwist_callback(const void *msgin) {
   // Convert the speed m/s in each motor into pulse/sec( but this code calculate in term of 100ms, so divine by 10 )
   SUBSCRIPTION_SPEED_LEFT = ( ( convert_cmd_vel_left * PPR ) / ( 2 * PI * ( WHEEL_DIAMETER / 2 ) ) ) / 10;
   SUBSCRIPTION_SPEED_RIGHT = ( ( convert_cmd_vel_right * PPR ) / ( 2 * PI * ( WHEEL_DIAMETER / 2 ) ) ) / 10;
+
+
+  msg__debug.data = SUBSCRIPTION_SPEED_LEFT;
   
 }
 
@@ -302,10 +305,6 @@ void navigationMotorControl(){
   // Send out status control the robot.
   msg_string_status.data.data = "Start control robot using navigation.";
 
-  // Setting the init velocity and angular velocity
-  setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, 0);
-  setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, 0);
-
   // Call the function PID adaptive gap
   PIDEncoderAdaptiveGap();
 
@@ -335,31 +334,27 @@ void navigationMotorControl(){
 }
 
 // Create function for recieve cmd_vel to control robot
-void controlRobotTeleop( int cmdVelLinearX, int cmdVelAngularZ ) {
+void controlRobotTeleop() {
   // Send out status control the robot.
   msg_string_status.data.data = "Start control robot using teleop.";
 
-  // Setting the init velocity and angular velocity
-  setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, 0);
-  setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, 0);
-
   // Check, If value of linear X was positive. ( Robot move forward )
-  if ((cmdVelLinearX > 0) && (cmdVelAngularZ == 0)) {
+  if ( ( SUBSCRIPTION_SPEED_LEFT > 0) && ( SUBSCRIPTION_SPEED_RIGHT > 0) ) {
     setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, 500);
     setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, 500);
   }
   // Check, If value of linear X was negative. ( Robot move backward )
-  else if ((cmdVelLinearX < 0) && (cmdVelAngularZ == 0)) {
+  else if ( ( SUBSCRIPTION_SPEED_LEFT < 0 ) && ( SUBSCRIPTION_SPEED_RIGHT < 0 ) ) {
     setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, -500);
     setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, -500);
   }
-  // Check, If value of linear X was negative. ( Robot turn left )
-  else if ((cmdVelLinearX == 0) && (cmdVelAngularZ < 0)) {
+  // Check, If value of linear X was negative. ( Robot turn right )
+  else if ( ( SUBSCRIPTION_SPEED_LEFT > 0 ) && ( SUBSCRIPTION_SPEED_RIGHT < 0 ) ) {
     setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, -500);
     setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, 500);
   }
-  // Check, If value of linear X was negative. ( Robot move right )
-  else if ((cmdVelLinearX == 0) && (cmdVelAngularZ > 0)) {
+  // Check, If value of linear X was negative. ( Robot move left )
+  else if ( ( SUBSCRIPTION_SPEED_LEFT < 0 ) && ( SUBSCRIPTION_SPEED_RIGHT > 0 ) ) {
     setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, 500);
     setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, -500);
   }
@@ -427,7 +422,7 @@ void microROSSetup() {
     "DEBUG_topic"));                                   // Topic name
 
   // Create timer callback.
-  const unsigned int timer_timeout = 100;  // timer period in milliseconds (1000 ms = 1 second)
+  const unsigned int timer_timeout = 10;  // timer period in milliseconds (1000 ms = 1 second)
   RCCHECK(rclc_timer_init_default(
     &timer,                       // Timer object
     &support,                     // Support object
@@ -497,6 +492,10 @@ void motorAndLedcSetup() {
   // Setup init motor
   ledcAttach(PWMpinMotorLeft, PWM_FREQUENCY, PWM_RESOLUTION);
   ledcAttach(PWMpinMotorRight, PWM_FREQUENCY, PWM_RESOLUTION);
+
+  // Setting the init velocity and angular velocity
+  setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, 0);
+  setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, 0);
 }
 
 // Function for setup board NodeMCU-32S.
@@ -538,17 +537,17 @@ void loop() {
   // Spin the node to run subscriber Twist repeatedly
   RCCHECK(rclc_executor_spin_some(
     &executor_subscriber_Twist,  // Executor subscriber object
-    RCL_MS_TO_NS(100)));   // Allow excutor to run 10 hz
+    RCL_MS_TO_NS(10)));   // Allow excutor to run 10 hz
 
   // Spin the node to run subscriber Int8 repeatedly
   RCCHECK(rclc_executor_spin_some(
     &executor_subscriber_Int8,  // Executor subscriber object
-    RCL_MS_TO_NS(100)));   // Allow excutor to run 10 hz
+    RCL_MS_TO_NS(10)));   // Allow excutor to run 10 hz
 
   // Spin the node to run publisher repeatedly
   RCCHECK(rclc_executor_spin_some(
     &executor_publisher,  // Executro publisher object
-    RCL_MS_TO_NS(100)));  // Allow excutor to run 10 hz
+    RCL_MS_TO_NS(10)));  // Allow excutor to run 10 hz
 
   // Check the mode robot to select the control mode
   if( MODE_ROBOT == 1 ){
@@ -557,7 +556,7 @@ void loop() {
 
   } else if( MODE_ROBOT == 2 ){
     // Get in the function of control robot by teleop.
-    controlRobotTeleop( msg_twist_cmd_vel->linear.x, msg_twist_cmd_vel->angular.z );
+    controlRobotTeleop();
 
   } else{
     // Debug if user didn't define the MODE_ROBOT

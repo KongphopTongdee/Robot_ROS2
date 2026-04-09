@@ -1,5 +1,8 @@
 <?xml version="1.0"?>
 <launch>
     <!-- Call node of micro-ROS which on the second port of USB -->
-    <node pkg="micro_ros_agent" exec="micro_ros_agent" name="micro_ROS" args="serial --dev /dev/ttyUSB1" />
+    <node pkg="micro_ros_agent" exec="micro_ros_agent" name="micro_ROS" args="serial --dev /dev/ttyUSB0" />
+    <!-- Call node odometry in package -->
+    <node pkg="diff_drive_3_legs" exec="odometry" name="odometry_robot" output="screen" />
+    
 </launch>

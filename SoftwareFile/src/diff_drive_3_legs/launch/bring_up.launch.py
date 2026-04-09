@@ -60,9 +60,9 @@ def generate_launch_description():
     )
 
     # Add the action to call node launch 
-    ld.add_action( node_robot_state_publisher )
-    # ld.add_action( robot_ros_launch )
-    ld.add_action( node_joint_state_publisher_gui )
-    ld.add_action( node_rviz2 )
+    # ld.add_action( node_robot_state_publisher )
+    ld.add_action( robot_ros_launch )
+    # ld.add_action( node_joint_state_publisher_gui )
+    # ld.add_action( node_rviz2 )
 
     return ld

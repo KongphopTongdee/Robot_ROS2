@@ -76,30 +76,71 @@ class DiffDriveTF( Node ):
         # Output the statement
         self.get_logger().info( "Complete robot bringup, waiting for publish odom..." )
 
-        # Create function for subscription left/right value from encoder
-        self.subscriptionLWheel_encoder = self.create_subscription( Int16, "/left_wheel_encoder", self.lWheel_callback, 10 )
-        self.subscriptionsRwheel_encoder = self.create_subscription( Int16, "/right_wheel_encoder", self.rWheel_callback, 10 )
 
+        # ---------- Subscription ----------
+        # Create function for subscription left/right value from encoder ( in term of pulse/sec )
+        self.subscription_speed_left = self.create_subscription( Int16, "/left_enc_accumulate_data", self.lWheel_callback, 10 )
+        self.subscription_speed_right = self.create_subscription( Int16, "/right_enc_accumulate_data", self.rWheel_callback, 10 )
+
+
+        # ---------- Publisher ----------
         # Create function for publish odometry
         self.publisherOdometry = self.create_publisher( Odometry, "/odometry", 10 )
         # Create timer for publisher 
         self.rate_hz = self.declare_parameter( "rate_hz", 10.0 ).value
         self.timer_ = self.create_timer( 1.0 / self.rate_hz , self.update )
 
+
         # Create odometry and transform variable 
         self.odom_broadcaster = TransformBroadcaster( self )
         self.base_frame_id = self.declare_parameter( "base_frame_id", "base_link" ).value
         self.odom_frame_id = self.declare_parameter( "odom_frame_id", "odom" ).value
 
-        # Deaclare the storage variable
-        # Storage the left/right encoder
-        self.left_encoder = None 
-        self.right_encoder = None 
+
+        # ---------- Necessary variable ----------
+        # Declare the storage pulse per 1 meter value
+        self.ticks_meter = float( self.declare_parameter( 'ticks_meter', 5136 ).value )
+
+        # Storage the left/right raw tick data from encoder( for calculate the position of odometry )
+        self.left_encoder_accumulate_data = 0.0 
+        self.right_encoder_accumulate_data = 0.0 
+        self.prev_left_encoder_data = None
+        self.prev_right_encoder_data = None
+
+        # Declare the limit of encoder( refer from the maximum pulse in one sec = 1984 pulse/sec )
+        self.encoder_min = self.declare_parameter( 'encoder_min', -2048 ).value
+        self.encoder_max = self.declare_parameter( 'encoder_max', 2048 ).value
+
+        # Declare the wrap boundary from encoder 
+        self.encoder_low_wrap = self.declare_parameter( 'wheel_low_wrap', ( self.encoder_max - self.encoder_min )*0.3 + self.encoder_min ).value
+        self.encoder_low_wrap = self.declare_parameter( 'wheel_high_wrap', ( self.encoder_max - self.encoder_min )*0.7 + self.encoder_min ).value
+
+        # Declare the storage round of rotation of the encoder
+        self.left_iteration = 0
+        self.right_iteration = 0
+        self.left_prev_tick_encoder = 0
+        self.right_tick_encoder = 0
+
         # Store the position of X and Y 
         self.xPosition = 0.0
         self.yPosition = 0.0
+        self.zPosition = 0.0
+
         # Store the previous time stamp
         self.previous_time = self.get_clock().now()
+
+        # Robot parameter( declare in context for ros2 )
+        self.width_robot = float( self.declare_parameter( 'width_robot', 0.398 ).value )
+        self.wheel_diameter = float( self.declare_parameter( 'wheel_diameter', 0.123 ).value )
+        self.pulse_per_revolution = float( self.declare_parameter( 'pulse_per_revolution', 480 ).value )
+
+        # Declare store velocity of wheel left and right value
+        self.distance_left = 0.0
+        self.distance_right = 0.0
+        self.linear_velocity = 0.0
+        self.angular_velocity = 0.0 
+        self.forward_distance_robot = 0.0
+        self.rotation_robot = 0.0
 
 
     def update( self ):
@@ -112,16 +153,43 @@ class DiffDriveTF( Node ):
         # Convert nanosec into sec
         sample_time = sample_time.nanoseconds / NS_TO_SEC
 
-        # Calculate odometry here!!!
+
+        # ---------- Calculate odometry here ----------
+        # Check if there wasn't any value in self.prev_left_encoder_data
+        # Equation for calculate velocity ; v = ( deltaTick )
+        if( self.prev_left_encoder_data is not None ):
+            self.distance_left = ( self.left_encoder_accumulate_data - self.prev_left_encoder_data ) * ( self.ticks_meter )
+            self.distance_right = ( self.right_encoder_accumulate_data - self.prev_right_encoder_data ) * ( self.ticks_meter )
+        self.prev_left_encoder_data = self.left_encoder_accumulate_data
+        self.prev_right_encoder_data = self.right_encoder_accumulate_data
 
 
+        # Calculate forward velocity of robot ( From equation distance = ( distance_r + distance_l ) / 2 )
+        self.forward_distance_robot = ( self.distance_right + self.distance_left ) / 2 
+        # Calculate rotation velocity of robot small angel ( From equation w = ( distance_r - distance_l ) / L ) ; L = distance between left and right wheel 
+        rotation_robot = ( self.distance_right - self.distance_left ) / self.width_robot
+        # Calculate acceration in one point using divide by time method ( other method was calculate acceration infinite time by using differential )
+        self.linear_velocity = self.forward_distance_robot / sample_time
+        self.angular_velocity = rotation_robot / sample_time
 
+        # Check if there was velocity of robot
+        if ( self.forward_distance_robot != 0 ):
+            # Calculate new position in x and y ordinate
+            newX = cos( rotation_robot ) * self.forward_distance_robot
+            newY = -sin( rotation_robot ) * self.forward_distance_robot
+            # Update the final position of robot
+            self.xPosition = self.xPosition + ( cos( self.rotation_robot ) * newX - sin( self.rotation_robot ) * newY )
+            self.yPosition = self.yPosition + ( sin( self.rotation_robot ) * newX + cos( self.rotation_robot ) * newY )
+        if ( self.rotation_robot != 0 ):
+            self.rotation_robot = self.rotation_robot + rotation_robot
+
+        # ---------- Assign the odometry value here ----------
         # Declare the quaternion variable
         quaternion = Quaternion()
         quaternion.x = 0.0
         quaternion.y = 0.0
-        quaternion.z = sin(  )
-        quaternion.w = cos(  )
+        quaternion.z = sin( self.rotation_robot / 2 )
+        quaternion.w = cos( self.rotation_robot / 2 )
 
         # Declare transform stamped variable
         transformStampedMsg = TransformStamped()
@@ -130,7 +198,7 @@ class DiffDriveTF( Node ):
         transformStampedMsg.child_frame_id = self.base_frame_id
         transformStampedMsg.transform.translation.x = self.xPosition
         transformStampedMsg.transform.translation.y = self.yPosition
-        transformStampedMsg.transform.translation.z = 0.0
+        transformStampedMsg.transform.translation.z = self.zPosition
         transformStampedMsg.transform.rotation.x = quaternion.x
         transformStampedMsg.transform.rotation.y = quaternion.y
         transformStampedMsg.transform.rotation.z = quaternion.z
@@ -143,33 +211,50 @@ class DiffDriveTF( Node ):
         odom = Odometry()
         odom.header.stamp = currentTime.to_msg()
         odom.header.frame_id = self.odom_frame_id
-        odom.child_frame_id = self.base_frame_id
-        odom.pose.pose.position.x = 
-        odom.pose.pose.position.y =
-        odom.pose.pose.position.z = 0.0
+        odom.pose.pose.position.x = self.xPosition
+        odom.pose.pose.position.y = self.yPosition
+        odom.pose.pose.position.z = self.zPosition
         odom.pose.pose.orientation = quaternion
-        odom.twist.twist.linear.x =
+        odom.child_frame_id = self.base_frame_id
+        odom.twist.twist.linear.x = self.linear_velocity
         odom.twist.twist.linear.y = 0.0
-        odom.twist.twist.angular.z = 
+        odom.twist.twist.angular.z = self.angular_velocity
         self.publisherOdometry.publish( odom )
 
+    # Create the subscription left_speed_pulse
+    def lWheel_callback( self, msg ):
+        # Create variable for encoder raw data
+        encoder_tick_data = msg.data
 
-    def lWheel_callback( self ):
-        pass
+        # ---------- Coding wrap boundary here ----------
+        # Check if the value was more than limit convert into stack and continue count.
+        if( ( encoder_tick_data < self.encoder_low_wrap ) and ( self.left_prev_tick_encoder > self.encoder_high_wrap ) ):
+            self.left_iteration += 1
+        # Check if the value was less than limit convert into stack and continue count.
+        if( ( encoder_tick_data > self.encoder_high_wrap ) and ( self.left_prev_tick_encoder < self.encoder_low_wrap ) ):
+            self.left_iteration -= 1
 
+        # Assign the accumulate value here using wrap boundary.
+        self.left_encoder_accumulate_data = ( 1.0 * ( encoder_tick_data + self.left_iteration * ( self.encoder_max - self.encoder_min ) ) )
+        # Store the previous value.
+        self.left_prev_tick_encoder = encoder_tick_data
 
-    def rWheel_callback( self ):
-        pass
+    # Create the subscription right_speed_pulse
+    def rWheel_callback( self, msg ):
+        encoder_tick_data = msg.data
 
+        # ---------- Coding wrap boundary here ----------
+        # Check if the value was more than limit convert into stack and continue count.
+        if( ( encoder_tick_data < self.encoder_low_wrap ) and ( self.right_prev_tick_encoder > self.encoder_high_wrap ) ):
+            self.right_iteration += 1
+        # Check if the value was less than limit convert into stack and continue count.
+        if( ( encoder_tick_data > self.encoder_high_wrap ) and ( self.right_prev_tick_encoder < self.encoder_low_wrap ) ):
+            self.right_iteration -= 1
 
-
-
-
-
-
-
-
-
+        # Assign the accumulate value here using wrap boundary.
+        self.right_encoder_accumulate_data = ( 1.0 * ( encoder_tick_data + self.right_iteration * ( self.encoder_max - self.encoder_min ) ) )
+        # Store the previous value.
+        self.right_prev_tick_encoder = encoder_tick_data
 
 
 # Create main function to call 
@@ -192,3 +277,12 @@ def main( args = None ):
 # If there wasn't any call from another file, this won't be error.
 if __name__ == "__main__":
     main()
+
+
+
+# Relationship: Pulse <-> RPM <-> m/s
+# PPR = pulse per revolution
+# R = wheel radius
+# 1.RPM = ( (pulse/sec) / PPR ) * 60
+# 2.v = ( RPM / 60 ) * ( 2 * pi * R )
+# 3.v = ( (pulse/sec) / PPR ) * ( 2 * pi * R )
