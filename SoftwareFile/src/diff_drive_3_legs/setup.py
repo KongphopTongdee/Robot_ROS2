@@ -37,7 +37,9 @@ setup(
     entry_points={
         'console_scripts': [
             "test_node_only = diff_drive_3_legs.test_file:main",
-            "control_robot_node = diff_drive_3_legs.controller_robot_diff_drive:main"
+            "control_robot_node = diff_drive_3_legs.controller_robot_diff_drive:main",
+            "odometry_node = diff_drive_3_legs.odometry:main",
+            "joint_state_publisher_node = diff_drive_3_legs.joint_state_publisher_myself:main",
         ],
     },
 )

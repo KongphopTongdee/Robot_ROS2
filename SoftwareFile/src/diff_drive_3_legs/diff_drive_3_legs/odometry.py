@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 #
 # Copyright (C) 2012 Jon Stephan.
 #
@@ -49,7 +49,7 @@ import rclpy
 from rclpy.node import Node
 
 # Package mathmatics
-from math import sin, cos, pi 
+from math import sin, cos
 
 # Package for transform board caster ( including /tf and /tf_static )
 from tf2_ros import TransformBroadcaster
@@ -78,9 +78,9 @@ class DiffDriveTF( Node ):
 
 
         # ---------- Subscription ----------
-        # Create function for subscription left/right value from encoder ( in term of pulse/sec )
-        self.subscription_speed_left = self.create_subscription( Int16, "/left_enc_accumulate_data", self.lWheel_callback, 10 )
-        self.subscription_speed_right = self.create_subscription( Int16, "/right_enc_accumulate_data", self.rWheel_callback, 10 )
+        # Create function for subscription left/right value from encoder ( only the counter )
+        self.subscription_speed_left = self.create_subscription( Int16, "/micro_ros_left_enc_tick_data", self.lWheel_callback, 10 )
+        self.subscription_speed_right = self.create_subscription( Int16, "/micro_ros_right_enc_tick_data", self.rWheel_callback, 10 )
 
 
         # ---------- Publisher ----------
@@ -100,6 +100,7 @@ class DiffDriveTF( Node ):
         # ---------- Necessary variable ----------
         # Declare the storage pulse per 1 meter value
         self.ticks_meter = float( self.declare_parameter( 'ticks_meter', 5136 ).value )
+        # self.ticks_meter = float( self.declare_parameter( 'ticks_meter', 1984 ).value )
 
         # Storage the left/right raw tick data from encoder( for calculate the position of odometry )
         self.left_encoder_accumulate_data = 0.0 
@@ -110,16 +111,18 @@ class DiffDriveTF( Node ):
         # Declare the limit of encoder( refer from the maximum pulse in one sec = 1984 pulse/sec )
         self.encoder_min = self.declare_parameter( 'encoder_min', -2048 ).value
         self.encoder_max = self.declare_parameter( 'encoder_max', 2048 ).value
+        # self.encoder_min = self.declare_parameter( 'encoder_min', -32768 ).value
+        # self.encoder_max = self.declare_parameter( 'encoder_max', 32768 ).value
 
         # Declare the wrap boundary from encoder 
         self.encoder_low_wrap = self.declare_parameter( 'wheel_low_wrap', ( self.encoder_max - self.encoder_min )*0.3 + self.encoder_min ).value
-        self.encoder_low_wrap = self.declare_parameter( 'wheel_high_wrap', ( self.encoder_max - self.encoder_min )*0.7 + self.encoder_min ).value
+        self.encoder_high_wrap = self.declare_parameter( 'wheel_high_wrap', ( self.encoder_max - self.encoder_min )*0.7 + self.encoder_min ).value
 
         # Declare the storage round of rotation of the encoder
         self.left_iteration = 0
         self.right_iteration = 0
         self.left_prev_tick_encoder = 0
-        self.right_tick_encoder = 0
+        self.right_prev_tick_encoder = 0
 
         # Store the position of X and Y 
         self.xPosition = 0.0
@@ -131,8 +134,8 @@ class DiffDriveTF( Node ):
 
         # Robot parameter( declare in context for ros2 )
         self.width_robot = float( self.declare_parameter( 'width_robot', 0.398 ).value )
-        self.wheel_diameter = float( self.declare_parameter( 'wheel_diameter', 0.123 ).value )
-        self.pulse_per_revolution = float( self.declare_parameter( 'pulse_per_revolution', 480 ).value )
+        # self.wheel_diameter = float( self.declare_parameter( 'wheel_diameter', 0.123 ).value )
+        # self.pulse_per_revolution = float( self.declare_parameter( 'pulse_per_revolution', 480 ).value )
 
         # Declare store velocity of wheel left and right value
         self.distance_left = 0.0
@@ -158,8 +161,8 @@ class DiffDriveTF( Node ):
         # Check if there wasn't any value in self.prev_left_encoder_data
         # Equation for calculate velocity ; v = ( deltaTick )
         if( self.prev_left_encoder_data is not None ):
-            self.distance_left = ( self.left_encoder_accumulate_data - self.prev_left_encoder_data ) * ( self.ticks_meter )
-            self.distance_right = ( self.right_encoder_accumulate_data - self.prev_right_encoder_data ) * ( self.ticks_meter )
+            self.distance_left = ( self.left_encoder_accumulate_data - self.prev_left_encoder_data ) / ( self.ticks_meter )
+            self.distance_right = ( self.right_encoder_accumulate_data - self.prev_right_encoder_data ) / ( self.ticks_meter )
         self.prev_left_encoder_data = self.left_encoder_accumulate_data
         self.prev_right_encoder_data = self.right_encoder_accumulate_data
 
@@ -220,6 +223,14 @@ class DiffDriveTF( Node ):
         odom.twist.twist.linear.y = 0.0
         odom.twist.twist.angular.z = self.angular_velocity
         self.publisherOdometry.publish( odom )
+
+        # print( "self.left_encoder_accumulate_data", self.left_encoder_accumulate_data )
+        # print( "self.right_encoder_accumulate_data", self.right_encoder_accumulate_data )
+        # print( "self.xPosition", self.xPosition )
+        # print( "self.yPosition", self.yPosition )
+        # print( "self.linear_velocity", self.linear_velocity )
+        # print( "self.angular_velocity", self.angular_velocity )
+        # print( "---------------------------------------------" )
 
     # Create the subscription left_speed_pulse
     def lWheel_callback( self, msg ):

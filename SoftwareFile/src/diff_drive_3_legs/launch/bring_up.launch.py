@@ -46,10 +46,12 @@ def generate_launch_description():
     node_joint_state_publisher_gui = Node( 
         package="joint_state_publisher_gui",
         executable="joint_state_publisher_gui",
-        name="joint_state_publisher_gui"
+        name="joint_state_publisher_gui",
+        output="screen",
     )
 
     # Call the all launch node in the file.launch.xml
+    # If you want to run micro-ros please insert this code in robot_bring_up.launch.xml: <node pkg="micro_ros_agent" exec="micro_ros_agent" name="micro_ROS" args="serial --dev /dev/ttyUSB0" />
     robot_ros_launch = IncludeLaunchDescription(
         XMLLaunchDescriptionSource(
             os.path.join(
@@ -60,9 +62,9 @@ def generate_launch_description():
     )
 
     # Add the action to call node launch 
-    # ld.add_action( node_robot_state_publisher )
+    ld.add_action( node_robot_state_publisher )
     ld.add_action( robot_ros_launch )
     # ld.add_action( node_joint_state_publisher_gui )
-    # ld.add_action( node_rviz2 )
+    ld.add_action( node_rviz2 )
 
     return ld

@@ -144,8 +144,8 @@
     <!-- Create the base_joint was fix on the ground -->
     <joint name="base_joint" type="fixed">
         <origin xyz="${xOriBaseJoint} ${yOriBaseJoint} ${zOriBaseJoint}" rpy="${rollOriBaseJoint} ${pitchOriBaseJoint} ${yallOriBaseJoint}"/>
-        <parent link="world"/>
-        <child link="base_link"/>
+        <parent link="base_link"/>
+        <child link="world"/>
     </joint>
 
     <!-- Create the base_link -->

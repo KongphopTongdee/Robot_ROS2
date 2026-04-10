@@ -100,13 +100,13 @@ class ControlRobotTeleop( Node ):
 
         # Function for checking the press key
         if( ( key == "w" ) or ( key == "W" ) ):
-            cmd_vel_variable.linear.x = 1.0
+            cmd_vel_variable.linear.x = 0.75
         elif( ( key == "s" ) or ( key == "S" ) ):
-            cmd_vel_variable.linear.x = -1.0
+            cmd_vel_variable.linear.x = -0.75
         elif( ( key == "a" ) or ( key == "A" ) ):
-            cmd_vel_variable.angular.z = 1.0
+            cmd_vel_variable.angular.z = 0.75
         elif( ( key == "d" ) or ( key == "D" ) ):
-            cmd_vel_variable.angular.z = -1.0
+            cmd_vel_variable.angular.z = -0.75
         else:
             cmd_vel_variable.linear.x = 0.0
             cmd_vel_variable.angular.z = 0.0

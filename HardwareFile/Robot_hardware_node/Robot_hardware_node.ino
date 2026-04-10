@@ -61,13 +61,13 @@ std_msgs__msg__Int8 msg__debug;
 
 
 
-// Create publisher object and message type.( publish => left wheel encoder )
-rcl_publisher_t LWheelEncoder;
-std_msgs__msg__Int16 msg_left_wheel_encoder;
+// Create publisher object and message type.( publish => left wheel encoder tick data )
+rcl_publisher_t publisherTickLeftEncoder;
+std_msgs__msg__Int16 msg_int16_left_tick_encoder;
 
-// Create publisher object and message type.( publish => right wheel encoder )
-rcl_publisher_t RWheelEncoder;
-std_msgs__msg__Int16 msg_right_wheel_encoder;
+// Create publisher object and message type.( publish => right wheel encoder tick data )
+rcl_publisher_t publisherTickRightEncoder;
+std_msgs__msg__Int16 msg_int16_right_tick_encoder;
 
 // Create executor which will run callbacks( timers, subscriptions ) when new data arrives.
 rclc_executor_t executor_subscriber_Twist;
@@ -102,10 +102,15 @@ rcl_timer_t timer;
 
 // ---------- Declare class for encoder ----------
 
-// Measure motor left
+// Measure motor left( in term of pulse/sec )
 ESP32Encoder encoderLeft;
-// Measure motor right
+// Measure motor right( in term of pulse/sec )
 ESP32Encoder encoderRight;
+
+// Measure motor left( in term of accumulate value )
+ESP32Encoder encoderTickLeft;
+// Measure motor right( in term of accumulate value )
+ESP32Encoder encoderTickRight;
 
 // ---------- Declare usage variable ----------
 
@@ -206,10 +211,17 @@ void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
   // Make sure timer exists.
   if (timer != NULL) {
 
+    // Call function to recieve the tick encoder value 
+    getTickEncoderValue();
+
     // Publish the error message on ROS2 topic.
     RCSOFTCHECK(rcl_publish(&publisherError, &msg_string_error, NULL));
     // Publish the status message on ROS2 topic.
     RCSOFTCHECK(rcl_publish(&publisherStatus, &msg_string_status, NULL));
+    // Publish the left tick encoder message on ROS2 topic.
+    RCSOFTCHECK(rcl_publish(&publisherTickLeftEncoder, &msg_int16_left_tick_encoder, NULL));  
+    // Publish the right tick encoder message on ROS2 topic.
+    RCSOFTCHECK(rcl_publish(&publisherTickRightEncoder, &msg_int16_right_tick_encoder, NULL));  
 
 
     // TUTA DEBUGGGGGGGG
@@ -365,6 +377,13 @@ void controlRobotTeleop() {
   }
 }
 
+// Create function for recieve the tick accumulate value 
+void getTickEncoderValue(){
+  // Count the tick encoder
+  msg_int16_left_tick_encoder.data = encoderTickLeft.getCount();
+  msg_int16_right_tick_encoder.data = encoderTickRight.getCount();
+}
+
 // ---------- Setup robot ----------
 
 // Function for setup micro-ROS.
@@ -412,7 +431,21 @@ void microROSSetup() {
     &publisherStatus,                                    // Publisher error object
     &node,                                               // Node that owns the publisher
     ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String),  // Message type
-    "micro_ros_status_message"));
+    "micro_ros_status_message"));                        // Topic name
+
+  // Create ROS2 publisher.( publish left wheel encoder tick data message )
+  RCCHECK(rclc_publisher_init_default(
+    &publisherTickLeftEncoder,                           // Publisher error object
+    &node,                                               // Node that owns the publisher
+    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int16),   // Message type
+    "micro_ros_left_enc_tick_data"));                    // Topic name
+  
+  // Create ROS2 publisher.( publish right wheel encoder tick data message )
+  RCCHECK(rclc_publisher_init_default(
+    &publisherTickRightEncoder,                           // Publisher error object
+    &node,                                               // Node that owns the publisher
+    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int16),   // Message type
+    "micro_ros_right_enc_tick_data"));                    // Topic name
 
   // TUTA DEBUGGGGGGGGGGGGGGGGg
   RCCHECK(rclc_publisher_init_default(
@@ -473,14 +506,20 @@ void encoderSetup() {
   // Setup motor left
   encoderLeft.attachFullQuad(encoderD3MotorLeft, encoderD2MotorLeft);
   encoderLeft.clearCount();
+  encoderTickLeft.attachFullQuad(encoderD3MotorLeft, encoderD2MotorLeft);
+  encoderTickLeft.clearCount();
 
   // Setup motor right
   encoderRight.attachFullQuad(encoderD3MotorRight, encoderD2MotorRight);
   encoderRight.clearCount();
+  encoderTickRight.attachFullQuad(encoderD3MotorRight, encoderD2MotorRight);
+  encoderTickRight.clearCount();
 
   // Set count value to 0
   encoderLeft.setCount(0);
   encoderRight.setCount(0);
+  encoderTickLeft.setCount(0);
+  encoderTickRight.setCount(0);
 }
 
 // Function for setup motor and generate PWM.

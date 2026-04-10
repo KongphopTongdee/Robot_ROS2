@@ -1,8 +1,12 @@
 <?xml version="1.0"?>
 <launch>
     <!-- Call node of micro-ROS which on the second port of USB -->
-    <node pkg="micro_ros_agent" exec="micro_ros_agent" name="micro_ROS" args="serial --dev /dev/ttyUSB0" />
+    
+    
     <!-- Call node odometry in package -->
-    <node pkg="diff_drive_3_legs" exec="odometry" name="odometry_robot" output="screen" />
+    <node pkg="diff_drive_3_legs" exec="odometry_node" name="odometry_robot" output="screen" />
+    
+    <!-- Call node joint state publisher -->
+    <node pkg="diff_drive_3_legs" exec="joint_state_publisher_node" name="joint_state_publisher_myself" output="screen" />
     
 </launch>
