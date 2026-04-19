@@ -40,7 +40,7 @@ def generate_launch_description():
         package="gazebo_ros",
         executable="spawn_entity.py",
         arguments= argumentSpawnEntity,
-        # output="screen",
+        output="screen",
     )
     argumentRviz = [ "-d", "src/control_robot_tutorial/config/drive_bot.rviz" ]
     rviz2_node = Node(
@@ -48,6 +48,18 @@ def generate_launch_description():
         executable="rviz2",
         output="screen",
         arguments=argumentRviz,
+    )
+
+    rplidar_node = Node(
+        package="rplidar_ros",
+        executable="rplidar_composition",
+        output="screen",
+        parameters=[{
+            "serial_port": "/dev/ttyUSB0",
+            "frame_id" : "laser_link",
+            "angle_compensate" : True,
+            "scan_mode" : "Standard"
+        }]
     )
 
     return LaunchDescription([

@@ -79,9 +79,9 @@ class ControlRobotTeleop( Node ):
         # Assign the time in JointState object
         msg.header.stamp = currentTime.to_msg()
         # Assign the name in JointState object
-        msg.name = [ "lwheel_joint","rwheel_joint","cylinderRplidar_joint" ]
+        msg.name = [ "lwheel_joint","rwheel_joint" ]
         # Assign the position in JointState object
-        msg.position = [ wheel_left_angle, wheel_right_angle, 0.0 ]
+        msg.position = [ wheel_left_angle, wheel_right_angle ]
         # Publish the output value 
         self.publisherJointState.publish( msg )
 

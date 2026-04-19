@@ -455,7 +455,8 @@ void microROSSetup() {
     "DEBUG_topic"));                                   // Topic name
 
   // Create timer callback.
-  const unsigned int timer_timeout = 10;  // timer period in milliseconds (1000 ms = 1 second)
+  // Create publish rate of message ( 1000ms = 1hz, 500ms = 2hz, 100ms = 10hz, 50ms = 20hz, 10ms = 100hz )
+  const unsigned int timer_timeout = 20;  // timer period in milliseconds (1000 ms = 1 second = 1hz)
   RCCHECK(rclc_timer_init_default(
     &timer,                       // Timer object
     &support,                     // Support object
@@ -574,19 +575,22 @@ void loop() {
   // put your main code here, to run repeatedly:
 
   // Spin the node to run subscriber Twist repeatedly
+  // executor frequency >= 3-5x timer frequency ( Think of it like this: Timer = when data should be sent (50 Hz), Executor = how often you check for work )( If executor is too slow: Messages get delayed, Timing becomes unstable )
   RCCHECK(rclc_executor_spin_some(
     &executor_subscriber_Twist,  // Executor subscriber object
-    RCL_MS_TO_NS(10)));   // Allow excutor to run 10 hz
+    RCL_MS_TO_NS(1)));   // Allow excutor to run 10 hz
 
   // Spin the node to run subscriber Int8 repeatedly
+  // executor frequency >= 3-5x timer frequency ( Think of it like this: Timer = when data should be sent (50 Hz), Executor = how often you check for work )( If executor is too slow: Messages get delayed, Timing becomes unstable )
   RCCHECK(rclc_executor_spin_some(
     &executor_subscriber_Int8,  // Executor subscriber object
-    RCL_MS_TO_NS(10)));   // Allow excutor to run 10 hz
+    RCL_MS_TO_NS(1)));   // Allow excutor to run 10 hz
 
   // Spin the node to run publisher repeatedly
+  // executor frequency >= 3-5x timer frequency ( Think of it like this: Timer = when data should be sent (50 Hz), Executor = how often you check for work )( If executor is too slow: Messages get delayed, Timing becomes unstable )
   RCCHECK(rclc_executor_spin_some(
     &executor_publisher,  // Executro publisher object
-    RCL_MS_TO_NS(10)));  // Allow excutor to run 10 hz
+    RCL_MS_TO_NS(1)));  // Allow excutor to run 10 hz
 
   // Check the mode robot to select the control mode
   if( MODE_ROBOT == 1 ){
