@@ -86,19 +86,20 @@ rcl_node_t node;
 // Create ROS2 timer object. ( used to trigger periodic callbacks )
 rcl_timer_t timer;
 
+
 // ---------- Declare pin usage ----------
 
-// Motor 1 pin usage
-#define PWMpinMotorLeft 25     // PWM pin
-#define DIRpinMotorLeft 26     // DIR pin
-#define encoderD3MotorLeft 32  // Encoder D3 pin
-#define encoderD2MotorLeft 33  // Encoder D2 pin
+// Motor 1 (Right)pin usage
+#define PWMpinMotorRight 25     // PWM pin
+#define DIRpinMotorRight 26     // DIR pin
+#define encoderD3MotorRight 32  // Encoder D3 pin
+#define encoderD2MotorRight 33  // Encoder D2 pin
 
-// Motor 2 pin usage
-#define PWMpinMotorRight 16     // PWM pin
-#define DIRpinMotorRight 4      // DIR pin
-#define encoderD3MotorRight 13  // Encoder D3 pin
-#define encoderD2MotorRight 14  // Encoder D2 pin
+// Motor 2 (Left)pin usage
+#define PWMpinMotorLeft 16     // PWM pin
+#define DIRpinMotorLeft 4      // DIR pin
+#define encoderD3MotorLeft 13  // Encoder D3 pin
+#define encoderD2MotorLeft 14  // Encoder D2 pin
 
 // ---------- Declare class for encoder ----------
 
@@ -198,15 +199,13 @@ void subscriberTwist_callback(const void *msgin) {
   // Convert the speed m/s in each motor into pulse/sec( but this code calculate in term of 100ms, so divine by 10 )
   SUBSCRIPTION_SPEED_LEFT = ( ( convert_cmd_vel_left * PPR ) / ( 2 * PI * ( WHEEL_DIAMETER / 2 ) ) ) / 10;
   SUBSCRIPTION_SPEED_RIGHT = ( ( convert_cmd_vel_right * PPR ) / ( 2 * PI * ( WHEEL_DIAMETER / 2 ) ) ) / 10;
-
-
-  msg__debug.data = SUBSCRIPTION_SPEED_LEFT;
   
 }
-
 void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
   // Prevent complier warning. ( variable not used )
   RCLC_UNUSED(last_call_time);
+
+  msg__debug.data++;
 
   // Make sure timer exists.
   if (timer != NULL) {
@@ -362,13 +361,13 @@ void controlRobotTeleop() {
   }
   // Check, If value of linear X was negative. ( Robot turn right )
   else if ( ( SUBSCRIPTION_SPEED_LEFT > 0 ) && ( SUBSCRIPTION_SPEED_RIGHT < 0 ) ) {
-    setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, -500);
-    setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, 500);
-  }
-  // Check, If value of linear X was negative. ( Robot move left )
-  else if ( ( SUBSCRIPTION_SPEED_LEFT < 0 ) && ( SUBSCRIPTION_SPEED_RIGHT > 0 ) ) {
     setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, 500);
     setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, -500);
+  }
+  // Check, If value of linear X was negative. ( Robot turn left )
+  else if ( ( SUBSCRIPTION_SPEED_LEFT < 0 ) && ( SUBSCRIPTION_SPEED_RIGHT > 0 ) ) {
+    setMotorSpeed(DIRpinMotorLeft, PWMpinMotorLeft, -500);
+    setMotorSpeed(DIRpinMotorRight, PWMpinMotorRight, 500);
   }
   // If there was't any match condition one of above.
   else {
@@ -456,7 +455,7 @@ void microROSSetup() {
 
   // Create timer callback.
   // Create publish rate of message ( 1000ms = 1hz, 500ms = 2hz, 100ms = 10hz, 50ms = 20hz, 10ms = 100hz )
-  const unsigned int timer_timeout = 20;  // timer period in milliseconds (1000 ms = 1 second = 1hz)
+  const unsigned int timer_timeout = 0.5;  // timer period in milliseconds (1000 ms = 1 second = 1hz)
   RCCHECK(rclc_timer_init_default(
     &timer,                       // Timer object
     &support,                     // Support object
@@ -578,19 +577,19 @@ void loop() {
   // executor frequency >= 3-5x timer frequency ( Think of it like this: Timer = when data should be sent (50 Hz), Executor = how often you check for work )( If executor is too slow: Messages get delayed, Timing becomes unstable )
   RCCHECK(rclc_executor_spin_some(
     &executor_subscriber_Twist,  // Executor subscriber object
-    RCL_MS_TO_NS(1)));   // Allow excutor to run 10 hz
+    RCL_MS_TO_NS(0.1)));   // Allow excutor to run 10 hz
 
   // Spin the node to run subscriber Int8 repeatedly
   // executor frequency >= 3-5x timer frequency ( Think of it like this: Timer = when data should be sent (50 Hz), Executor = how often you check for work )( If executor is too slow: Messages get delayed, Timing becomes unstable )
   RCCHECK(rclc_executor_spin_some(
     &executor_subscriber_Int8,  // Executor subscriber object
-    RCL_MS_TO_NS(1)));   // Allow excutor to run 10 hz
+    RCL_MS_TO_NS(0.1)));   // Allow excutor to run 10 hz
 
   // Spin the node to run publisher repeatedly
   // executor frequency >= 3-5x timer frequency ( Think of it like this: Timer = when data should be sent (50 Hz), Executor = how often you check for work )( If executor is too slow: Messages get delayed, Timing becomes unstable )
   RCCHECK(rclc_executor_spin_some(
     &executor_publisher,  // Executro publisher object
-    RCL_MS_TO_NS(1)));  // Allow excutor to run 10 hz
+    RCL_MS_TO_NS(0.1)));  // Allow excutor to run 10 hz
 
   // Check the mode robot to select the control mode
   if( MODE_ROBOT == 1 ){

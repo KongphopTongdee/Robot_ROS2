@@ -9,7 +9,6 @@ from launch_ros.actions import Node
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
-from launch_ros.substitutions import FindPackageShare
 from launch.substitutions import LaunchConfiguration
 
 # Create function to call launch
@@ -23,7 +22,7 @@ def generate_launch_description():
     
     # Get the gazebo world path
     gazebo_world_path = os.path.join(
-        get_package_share_directory( 'control_robot_tutorial' ),'config','obstacles.world'
+        get_package_share_directory( 'control_robot_tutorial' ),'world','obstacles.world'
     )
     world = LaunchConfiguration( 'world', default=gazebo_world_path )
 
@@ -31,7 +30,7 @@ def generate_launch_description():
     gazebo_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([os.path.join( 
             get_package_share_directory('gazebo_ros'), 'launch','gazebo.launch.py' )]),
-            launch_arguments={'world':world}.items(),
+            launch_arguments={'gz_args':world}.items(),
     )
 
     # Create spawn entity node 
@@ -62,9 +61,26 @@ def generate_launch_description():
         }]
     )
 
+    diff_drive_spawner_node = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["diff_cont"],
+        # output="screen",
+    )
+
+    joint_board_spawner_node = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["joint_board"],
+        # output="screen",
+    )
+
     return LaunchDescription([
         robot_state_publisher_node,
         gazebo_node,
         spawn_entity_node,
-        rviz2_node,
+        # rviz2_node,
+        # rplidar_node,
+        diff_drive_spawner_node,
+        joint_board_spawner_node,
     ])

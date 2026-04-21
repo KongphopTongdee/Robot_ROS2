@@ -19,7 +19,7 @@ setup(
         # Add function to call calculate mesh
         (os.path.join('share', package_name, 'meshes'),glob('meshes/*')),
         # Add function to call config world gazebo file
-        (os.path.join('share', package_name, 'config'),glob(os.path.join( 'config', 'gazebo_world/*.world' ))),
+        (os.path.join('share', package_name, 'world'),glob(os.path.join( 'world', '*.world' ))),
         # Add function to call config yaml file
         (os.path.join('share', package_name, 'config'),glob(os.path.join( 'config', '*.yaml' ))),
     ],

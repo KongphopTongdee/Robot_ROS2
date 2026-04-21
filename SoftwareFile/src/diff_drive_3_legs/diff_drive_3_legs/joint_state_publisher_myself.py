@@ -80,8 +80,8 @@ class ControlRobotTeleop( Node ):
         msg.header.stamp = currentTime.to_msg()
         # Assign the name in JointState object
         msg.name = [ "lwheel_joint","rwheel_joint" ]
-        # Assign the position in JointState object
-        msg.position = [ wheel_left_angle, wheel_right_angle ]
+        # Assign the position in JointState object( need to opposit because of different axis of wheel )
+        msg.position = [ wheel_left_angle, -wheel_right_angle ]
         # Publish the output value 
         self.publisherJointState.publish( msg )
 

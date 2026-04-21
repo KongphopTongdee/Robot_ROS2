@@ -104,8 +104,10 @@ class ControlRobotTeleop( Node ):
         elif( ( key == "s" ) or ( key == "S" ) ):
             cmd_vel_variable.linear.x = -0.75
         elif( ( key == "a" ) or ( key == "A" ) ):
+            # Rotation clockwise = + value 
             cmd_vel_variable.angular.z = 0.75
         elif( ( key == "d" ) or ( key == "D" ) ):
+            # Rotation counter clockwise = - value 
             cmd_vel_variable.angular.z = -0.75
         else:
             cmd_vel_variable.linear.x = 0.0

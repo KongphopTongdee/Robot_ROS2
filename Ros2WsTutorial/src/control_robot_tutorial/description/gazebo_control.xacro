@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!-- Import the xacro library -->
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="robot">
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" >
 
     <!-- Using gazebo in xacro file -->
     <gazebo>
@@ -10,7 +10,7 @@
             <left_joint>left_wheel_joint</left_joint>
             <right_joint>right_wheel_joint</right_joint>
             <!-- Get wheel_speration by measure the distance of right_wheel_joint and left_wheel_joint -->
-            <wheel_speration>0.35</wheel_speration>
+            <wheel_separation>0.35</wheel_separation>
             <wheel_diameter>0.1</wheel_diameter>
             
             <!-- Limit acceleration and torque -->

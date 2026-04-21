@@ -40,6 +40,5 @@
             <parameters>$(find control_robot_tutorial)/config/my_controller.yaml</parameters>
         </plugin>
     </gazebo>
-
     
 </robot>
