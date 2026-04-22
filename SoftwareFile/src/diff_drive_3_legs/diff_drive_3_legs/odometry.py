@@ -55,8 +55,6 @@ from math import sin, cos
 from tf2_ros import TransformBroadcaster
 
 # Package storage variable 
-# Store the velocity vector
-from geometry_msgs.msg import Twist
 # Store the odemetry information 
 from geometry_msgs.msg import Quaternion
 from geometry_msgs.msg import TransformStamped
@@ -183,7 +181,7 @@ class DiffDriveTF( Node ):
             # Update the final position of robot
             self.xPosition = self.xPosition + ( cos( self.rotation_robot ) * newX - sin( self.rotation_robot ) * newY )
             self.yPosition = self.yPosition + ( sin( self.rotation_robot ) * newX + cos( self.rotation_robot ) * newY )
-        if ( self.rotation_robot != 0 ):
+        if ( rotation_robot != 0 ):
             self.rotation_robot = self.rotation_robot + rotation_robot
 
         # ---------- Assign the odometry value here ----------
@@ -214,11 +212,11 @@ class DiffDriveTF( Node ):
         odom = Odometry()
         odom.header.stamp = currentTime.to_msg()
         odom.header.frame_id = self.odom_frame_id
+        odom.child_frame_id = self.base_frame_id
         odom.pose.pose.position.x = self.xPosition
         odom.pose.pose.position.y = self.yPosition
         odom.pose.pose.position.z = self.zPosition
         odom.pose.pose.orientation = quaternion
-        odom.child_frame_id = self.base_frame_id
         odom.twist.twist.linear.x = self.linear_velocity
         odom.twist.twist.linear.y = 0.0
         odom.twist.twist.angular.z = self.angular_velocity
@@ -292,51 +290,3 @@ if __name__ == "__main__":
 # 3.v = ( (pulse/sec) / PPR ) * ( 2 * pi * R )
 
 
-
-# Wheel Odometry ( Differential drive robot ) 
-# import math
-
-# class Odometry:
-#     def __init__(self, wheel_radius, distance_between_wheels, ticks_per_rev):
-#         self.r = wheel_radius
-#         self.d = distance_between_wheels
-#         self.ticks_per_rev = ticks_per_rev
-        
-#         # Initial state
-#         self.x = 0.0
-#         self.y = 0.0
-#         self.theta = 0.0
-        
-#         self.last_left_ticks = 0
-#         self.last_right_ticks = 0
-
-#     def update(self, left_ticks, right_ticks):
-#         # Calculate distance traveled by each wheel
-#         d_left = (left_ticks - self.last_left_ticks) * (2 * math.pi * self.r) / self.ticks_per_rev
-#         d_right = (right_ticks - self.last_right_ticks) * (2 * math.pi * self.r) / self.ticks_per_rev
-        
-#         # Update encoder memory
-#         self.last_left_ticks = left_ticks
-#         self.last_right_ticks = right_ticks
-        
-#         # Calculate robot center movement
-#         d_center = (d_left + d_right) / 2
-        
-#         # Calculate change in heading
-#         d_theta = (d_right - d_left) / self.d
-        
-#         # Update global pose
-#         self.x += d_center * math.cos(self.theta + d_theta / 2)
-#         self.y += d_center * math.sin(self.theta + d_theta / 2)
-#         self.theta += d_theta
-        
-#         # Normalize theta to [-pi, pi]
-#         self.theta = math.atan2(math.sin(self.theta), math.cos(self.theta))
-        
-#         return self.x, self.y, self.theta
-
-# # --- Usage Example ---
-# odom = Odometry(wheel_radius=0.05, distance_between_wheels=0.4, ticks_per_rev=1000)
-# # Suppose encoders turned 500 ticks
-# position = odom.update(500, 500) 
-# print(f"New Pose: {position}")

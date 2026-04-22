@@ -18,38 +18,8 @@ def generate_launch_description():
     # Create path to call the config file
     rviz_config_file = os.path.join( pkg_path, "config", "config_visualize_robot.rviz" )
 
-    # Create the object launchDescription
-    ld = LaunchDescription()
 
-    # Coding node to call here
-    # Create node robot_state_publisher
-    params = { 'robot_description': robot_description_config.toxml() }
-    node_robot_state_publisher = Node(
-        package="robot_state_publisher",
-        executable="robot_state_publisher",
-        name="robot_state_publisher",
-        output="screen",                                                        # output the result into the terminal
-        parameters=[params]                                                     # call robot description
-    )
-
-    # Test only publish to rviz2
-    paramsRviz2 = [ '-d', rviz_config_file ]
-    node_rviz2 = Node(
-        package="rviz2",
-        executable="rviz2",
-        name="rviz2",
-        arguments= paramsRviz2,
-        output="screen",
-    )
-
-    # Test only with joint_state_publisher_gui
-    node_joint_state_publisher_gui = Node( 
-        package="joint_state_publisher_gui",
-        executable="joint_state_publisher_gui",
-        name="joint_state_publisher_gui",
-        output="screen",
-    )
-
+    # ---------- Coding launch file to call here ----------
     # Call the all launch node in the file.launch.xml
     # If you want to run micro-ros please insert this code in robot_bring_up.launch.xml: <node pkg="micro_ros_agent" exec="micro_ros_agent" name="micro_ROS" args="serial --dev /dev/ttyUSB0" />
     robot_ros_launch = IncludeLaunchDescription(
@@ -61,10 +31,63 @@ def generate_launch_description():
         )
     )
 
-    # Add the action to call node launch 
-    ld.add_action( node_robot_state_publisher )
-    ld.add_action( robot_ros_launch )
-    # ld.add_action( node_joint_state_publisher_gui )
-    ld.add_action( node_rviz2 )
 
-    return ld
+    # ---------- Coding node to call here ----------
+    # Create node robot_state_publisher
+    paramOfRobotDescription = { 'robot_description': robot_description_config.toxml() }
+    robot_state_publisher_node = Node(
+        package="robot_state_publisher",
+        executable="robot_state_publisher",
+        name="robot_state_publisher",
+        output="screen",                                                        # output the result into the terminal
+        parameters=[paramOfRobotDescription]                                                     # call robot description
+    )
+
+    # Create node of rplidar sensor c1
+    paramOfRplidarC1 = {
+          "channel_type": "serial",
+            # Need to be setting with -ls /dev/serial/by-path/ for all continue usage port 
+            # This was serial by-path of the first port
+          "serial_port": "/dev/serial/by-path/pci-0000:00:14.0-usb-0:4:1.0-port0",            
+          "serial_baudrate": 460800,
+          "frame_id": "odom",
+          "inverted": False,
+          "angle_compensate": True,
+          "scan_mode": "Standard",
+    }
+    rplidar_c1_node = Node(
+        package="rplidar_ros",
+        executable="rplidar_node",
+        name="rplidar_node",
+        output="screen",
+        parameters=[paramOfRplidarC1]
+    )
+
+    # Test only publish to rviz2
+    paramsRviz2 = [ '-d', rviz_config_file ]
+    rviz2_node = Node(
+        package="rviz2",
+        executable="rviz2",
+        name="rviz2",
+        arguments= paramsRviz2,
+        output="screen",
+    )
+
+    # Test only with joint_state_publisher_gui
+    joint_state_publisher_gui_node = Node( 
+        package="joint_state_publisher_gui",
+        executable="joint_state_publisher_gui",
+        name="joint_state_publisher_gui",
+        output="screen",
+    )
+
+
+
+    # Add the action to call node launch 
+    return LaunchDescription([
+        robot_state_publisher_node,
+        robot_ros_launch,
+        # joint_state_publisher_gui_node,
+        rviz2_node,
+        rplidar_c1_node,
+    ])

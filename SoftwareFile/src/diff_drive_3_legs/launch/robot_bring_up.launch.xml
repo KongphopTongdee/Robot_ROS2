@@ -8,5 +8,5 @@
     
     <!-- Call node joint state publisher -->
     <node pkg="diff_drive_3_legs" exec="joint_state_publisher_node" name="joint_state_publisher_myself" output="screen" />
-    
+
 </launch>

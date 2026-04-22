@@ -8,6 +8,9 @@ Panels:
         - /Status1
         - /TF1
         - /RobotModel1
+        - /LaserScan1
+        - /LaserScan1/Status1
+        - /LaserScan1/Topic1
       Splitter Ratio: 0.5
     Tree Height: 719
   - Class: rviz_common/Selection
@@ -54,7 +57,19 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        base_link:
+          Value: true
         boxRplidar_link:
+          Value: true
+        cylinderRplidar_link:
+          Value: true
+        lwheel_link:
+          Value: true
+        odom:
+          Value: true
+        rwheel_link:
+          Value: true
+        support_base_link:
           Value: true
         world:
           Value: true
@@ -64,9 +79,19 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        world:
-          boxRplidar_link:
-            {}
+        odom:
+          base_link:
+            boxRplidar_link:
+              cylinderRplidar_link:
+                {}
+            lwheel_link:
+              {}
+            rwheel_link:
+              {}
+            support_base_link:
+              {}
+            world:
+              {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -82,16 +107,41 @@ Visualization Manager:
         Value: /robot_description
       Enabled: true
       Links:
-        All Links Enabled:
-          {}
+        All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         boxRplidar_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
+        cylinderRplidar_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        lwheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rwheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        support_base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         world:
           Alpha: 1
           Show Axes: false
@@ -104,10 +154,44 @@ Visualization Manager:
       Update Interval: 0
       Value: true
       Visual Enabled: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz_default_plugins/LaserScan
+      Color: 255; 255; 255
+      Color Transformer: ""
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: LaserScan
+      Position Transformer: ""
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.05000000074505806
+      Style: Flat Squares
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: System Default
+        Value: /scan
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: world
+    Fixed Frame: odom
     Frame Rate: 30
   Name: root
   Tools:
@@ -150,7 +234,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 3.5963454246520996
+      Distance: 7.705935001373291
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -165,10 +249,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.785398006439209
+      Pitch: 0.4853972792625427
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.785398006439209
+      Yaw: 2.2754087448120117
     Saved: ~
 Window Geometry:
   Displays:
