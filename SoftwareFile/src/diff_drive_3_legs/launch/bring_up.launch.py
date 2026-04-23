@@ -2,6 +2,8 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 from launch.actions import IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
 from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
 import os 
 import xacro
@@ -34,20 +36,21 @@ def generate_launch_description():
 
     # ---------- Coding node to call here ----------
     # Create node robot_state_publisher
-    paramOfRobotDescription = { 'robot_description': robot_description_config.toxml() }
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    paramOfRobotDescription = { 'robot_description': robot_description_config.toxml(), "use_sim_time": use_sim_time }
     robot_state_publisher_node = Node(
         package="robot_state_publisher",
         executable="robot_state_publisher",
         name="robot_state_publisher",
         output="screen",                                                        # output the result into the terminal
-        parameters=[paramOfRobotDescription]                                                     # call robot description
+        parameters=[paramOfRobotDescription]                                     # call robot description
     )
 
     # Create node of rplidar sensor c1
     paramOfRplidarC1 = {
           "channel_type": "serial",
             # Need to be setting with -ls /dev/serial/by-path/ for all continue usage port 
-            # This was serial by-path of the first port
+            # This was serial by-path of the first port in msi notebook : /dev/serial/by-path/pci-0000:00:14.0-usb-0:4:1.0-port0
           "serial_port": "/dev/serial/by-path/pci-0000:00:14.0-usb-0:4:1.0-port0",            
           "serial_baudrate": 460800,
           "frame_id": "odom",
@@ -61,6 +64,18 @@ def generate_launch_description():
         name="rplidar_node",
         output="screen",
         parameters=[paramOfRplidarC1]
+    )
+
+    # Create node of micro-ros agent
+    # Need to be setting with -ls /dev/serial/by-path/ for all continue usage port 
+    # This was serial by-path of the second port in msi notebook : /dev/serial/by-path/pci-0000:00:14.0-usb-0:3:1.0-port0
+    paramOfMicroRosAgent = [ "serial", "--dev", "/dev/serial/by-path/pci-0000:00:14.0-usb-0:3:1.0-port0"  ]
+    micro_ros_agent_node = Node(
+        package="micro_ros_agent",
+        executable="micro_ros_agent",
+        name="micro_ros_agent_node",
+        output="screen",
+        arguments=paramOfMicroRosAgent
     )
 
     # Test only publish to rviz2
@@ -81,13 +96,15 @@ def generate_launch_description():
         output="screen",
     )
 
-
-
     # Add the action to call node launch 
     return LaunchDescription([
+        DeclareLaunchArgument(
+            'use_sim_time', default_value='false',
+            description='Use simulation (Gazebo) clock if true'),
         robot_state_publisher_node,
         robot_ros_launch,
         # joint_state_publisher_gui_node,
         rviz2_node,
-        rplidar_c1_node,
+        # rplidar_c1_node,
+        # micro_ros_agent_node,
     ])

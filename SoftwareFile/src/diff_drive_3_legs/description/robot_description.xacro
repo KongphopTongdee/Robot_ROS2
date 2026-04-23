@@ -141,6 +141,7 @@
     <!-- Create the world_link was emptry -->
     <link name="world"></link>
 
+
     <!-- Create the base_joint was fix on the ground -->
     <joint name="base_joint" type="fixed">
         <origin xyz="${xOriBaseJoint} ${yOriBaseJoint} ${zOriBaseJoint}" rpy="${rollOriBaseJoint} ${pitchOriBaseJoint} ${yallOriBaseJoint}"/>
@@ -165,6 +166,17 @@
                 <origin xyz="${xOriBaseLink} ${yOriBaseLink} ${zOriBaseLink}" rpy="${rollOriBaseLink} ${pitchOriBaseLink} ${yallOriBaseLink}"/>
             </xacro:box_inertia>        
         </inertial>
+    </link>
+
+    <!-- Create the base_footprint_joint was the shadow of base_link -->
+    <joint name="base_footprint_joint" type="fixed">
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+        <parent link="base_link"/>
+        <child link="base_footprint_link"/>
+    </joint>
+
+    <!-- Create the of base_footprint_link -->
+    <link name="base_footprint_link">
     </link>
 
     <!-- Create the lwheel_joint -->
