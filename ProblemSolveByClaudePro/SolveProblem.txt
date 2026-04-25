@@ -1,0 +1,129 @@
+================================================================================
+PROBLEM: SLAM Toolbox - "failed to compute odom pose"
+DATE: 2026-04-25
+================================================================================
+
+COMMANDS THAT TRIGGERED THE BUG
+---------------------------------
+Terminal 1:
+  ros2 launch diff_drive_3_legs bring_up.launch.py
+
+Terminal 2:
+  ros2 launch slam_toolbox online_async_launch.py \
+    params_file:=./src/diff_drive_3_legs/config/mapper_params_online_async.yaml \
+    use_sim_time:=true
+
+
+ROOT CAUSES FOUND (3 bugs)
+---------------------------------
+
+BUG 1 - CRITICAL: Wrong frame_id in RPLidar launch file
+  File: src/diff_drive_3_legs/launch/launch_rplidar.launch.py
+  Line: "frame_id": "odom"   <-- WRONG
+
+  Explanation:
+    The rplidar_node publishes /scan messages. Each message has a header.frame_id
+    that tells SLAM Toolbox which TF frame the scan data is expressed in.
+    SLAM Toolbox needs to look up the transform:
+        scan_frame -> base_link  (to know where the sensor is on the robot)
+    and then:
+        base_link -> odom        (odometry, published by odometry.py)
+
+    When frame_id was "odom", SLAM received scans claiming to be already in the
+    odom frame. This creates a circular dependency because SLAM is trying to
+    compute the odom->base_link transform, but the scan source frame IS odom.
+    SLAM Toolbox failed immediately with "failed to compute odom pose".
+
+  Fix applied:
+    Changed "frame_id" from "odom" to "cylinderRplidar_link".
+    This is the actual lidar sensor link defined in the robot URDF
+    (src/diff_drive_3_legs/description/lidar_sensor.xacro).
+    robot_state_publisher already broadcasts the TF chain:
+        base_link -> boxRplidar_link -> cylinderRplidar_link
+    so SLAM Toolbox can now correctly resolve the sensor position.
+
+
+BUG 2 - CRITICAL: use_sim_time mismatch between bring_up and SLAM
+  Command issue: bring_up.launch.py runs with use_sim_time:=false (default)
+                 but SLAM was launched with use_sim_time:=true
+
+  Explanation:
+    use_sim_time:=true tells every node to use the /clock topic for timestamps
+    instead of the system wall clock. This is only valid when Gazebo (or another
+    clock publisher) is running. On a real physical robot there is no /clock
+    publisher.
+
+    Result: SLAM Toolbox waited for /clock timestamps that never arrived, so
+    all TF lookups timed out -> "failed to compute odom pose".
+
+    Additionally, the odometry node (odometry.py) was running with wall clock
+    time, while SLAM expected simulation time. The timestamps in /odom and /tf
+    published by the odometry node did not match what SLAM was looking for.
+
+  Fix applied:
+    ALWAYS run both commands with use_sim_time:=false on the real robot:
+
+    Terminal 1 (no change needed, default is already false):
+      ros2 launch diff_drive_3_legs bring_up.launch.py
+
+    Terminal 2 (CORRECTED command):
+      ros2 launch slam_toolbox online_async_launch.py \
+        params_file:=./src/diff_drive_3_legs/config/mapper_params_online_async.yaml \
+        use_sim_time:=false
+
+    Only use use_sim_time:=true when running inside Gazebo simulation.
+
+
+BUG 3 - MINOR: transform_timeout too short for Raspberry Pi 5
+  File: src/diff_drive_3_legs/config/mapper_params_online_async.yaml
+  Line: transform_timeout: 0.2   <-- was 0.2 seconds
+
+  Explanation:
+    transform_timeout is how long SLAM Toolbox will wait for a TF transform
+    to become available before giving up. On a Raspberry Pi 5 under load
+    (running lidar, odometry, robot_state_publisher, rviz2 simultaneously),
+    TF lookups can occasionally take longer than 0.2s, causing spurious
+    "failed to compute odom pose" errors even when the TF tree is correct.
+
+  Fix applied:
+    Increased transform_timeout from 0.2 to 0.5 seconds.
+    This gives the TF system enough margin without making SLAM unresponsive.
+
+
+FILES CHANGED
+---------------------------------
+1. src/diff_drive_3_legs/launch/launch_rplidar.launch.py
+   - "frame_id": "odom"  ->  "frame_id": "cylinderRplidar_link"
+
+2. src/diff_drive_3_legs/config/mapper_params_online_async.yaml
+   - transform_timeout: 0.2  ->  transform_timeout: 0.5
+
+
+CORRECT COMMANDS TO RUN (after fix)
+---------------------------------
+Terminal 1:
+  ros2 launch diff_drive_3_legs bring_up.launch.py
+
+Terminal 2:
+  ros2 launch slam_toolbox online_async_launch.py \
+    params_file:=./src/diff_drive_3_legs/config/mapper_params_online_async.yaml \
+    use_sim_time:=false
+
+
+HOW TO VERIFY THE FIX
+---------------------------------
+After launching both commands, check TF tree is connected:
+  ros2 run tf2_tools view_frames
+
+Expected TF chain:
+  map -> odom -> base_link -> boxRplidar_link -> cylinderRplidar_link
+                           -> lwheel_link
+                           -> rwheel_link
+                           -> support_base_link
+                           -> base_footprint_link
+
+Check /scan topic frame:
+  ros2 topic echo /scan --field header.frame_id
+  Expected output: cylinderRplidar_link
+
+================================================================================

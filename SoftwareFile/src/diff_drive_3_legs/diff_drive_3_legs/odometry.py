@@ -83,7 +83,7 @@ class DiffDriveTF( Node ):
 
         # ---------- Publisher ----------
         # Create function for publish odometry
-        self.publisherOdometry = self.create_publisher( Odometry, "/odometry", 10 )
+        self.publisherOdometry = self.create_publisher( Odometry, "odom", 10 )
         # Create timer for publisher 
         self.rate_hz = self.declare_parameter( "rate_hz", 10.0 ).value
         self.timer_ = self.create_timer( 1.0 / self.rate_hz , self.update )

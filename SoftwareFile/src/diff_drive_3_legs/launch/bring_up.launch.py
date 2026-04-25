@@ -5,6 +5,7 @@ from launch.actions import IncludeLaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 import os 
 import xacro
 # Import the launch library
@@ -33,6 +34,16 @@ def generate_launch_description():
         )
     )
 
+    rplidar_c1_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([os.path.join(
+            get_package_share_directory( "diff_drive_3_legs" ), "launch", "launch_rplidar.launch.py" 
+        )])
+    )
+
+    # example ros2 launch slam_toolbox online_async_launch.py params_file:=./src/diff_drive_3_legs/config/mapper_params_online_async.yaml use_sim_time:=false 
+
+    #onilne_async_launch = 
+
 
     # ---------- Coding node to call here ----------
     # Create node robot_state_publisher
@@ -44,27 +55,6 @@ def generate_launch_description():
         name="robot_state_publisher",
         output="screen",                                                        # output the result into the terminal
         parameters=[paramOfRobotDescription]                                     # call robot description
-    )
-
-    # Create node of rplidar sensor c1
-    paramOfRplidarC1 = {
-          "channel_type": "serial",
-            # Need to be setting with -ls /dev/serial/by-path/ for all continue usage port 
-            # This was serial by-path of the first port in msi notebook : /dev/serial/by-path/pci-0000:00:14.0-usb-0:4:1.0-port0
-            # This was serial by-path of the first port in raspberry pi 5 : /dev/serial/by-path/platform-xhci-hcd.1-usb-0:1:1.0-port0
-          "serial_port": "/dev/serial/by-path/platform-xhci-hcd.1-usb-0:1:1.0-port0",            
-          "serial_baudrate": 460800,
-          "frame_id": "odom",
-          "inverted": False,
-          "angle_compensate": True,
-          "scan_mode": "Standard",
-    }
-    rplidar_c1_node = Node(
-        package="rplidar_ros",
-        executable="rplidar_node",
-        name="rplidar_node",
-        output="screen",
-        parameters=[paramOfRplidarC1]
     )
 
     # Create node of micro-ros agent
@@ -98,6 +88,8 @@ def generate_launch_description():
         output="screen",
     )
 
+
+
     # Add the action to call node launch 
     return LaunchDescription([
         DeclareLaunchArgument(
@@ -107,6 +99,7 @@ def generate_launch_description():
         robot_ros_launch,
         # joint_state_publisher_gui_node,
         rviz2_node,
-        # rplidar_c1_node,
-        # micro_ros_agent_node,
+        rplidar_c1_launch,
+        micro_ros_agent_node,
+        onilne_async_launch,
     ])
