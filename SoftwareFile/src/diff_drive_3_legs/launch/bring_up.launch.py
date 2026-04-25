@@ -51,7 +51,8 @@ def generate_launch_description():
           "channel_type": "serial",
             # Need to be setting with -ls /dev/serial/by-path/ for all continue usage port 
             # This was serial by-path of the first port in msi notebook : /dev/serial/by-path/pci-0000:00:14.0-usb-0:4:1.0-port0
-          "serial_port": "/dev/serial/by-path/pci-0000:00:14.0-usb-0:4:1.0-port0",            
+            # This was serial by-path of the first port in raspberry pi 5 : /dev/serial/by-path/platform-xhci-hcd.1-usb-0:1:1.0-port0
+          "serial_port": "/dev/serial/by-path/platform-xhci-hcd.1-usb-0:1:1.0-port0",            
           "serial_baudrate": 460800,
           "frame_id": "odom",
           "inverted": False,
@@ -69,7 +70,8 @@ def generate_launch_description():
     # Create node of micro-ros agent
     # Need to be setting with -ls /dev/serial/by-path/ for all continue usage port 
     # This was serial by-path of the second port in msi notebook : /dev/serial/by-path/pci-0000:00:14.0-usb-0:3:1.0-port0
-    paramOfMicroRosAgent = [ "serial", "--dev", "/dev/serial/by-path/pci-0000:00:14.0-usb-0:3:1.0-port0"  ]
+    # This was serial by-path of the second port in raspberry pi 5 : /dev/serial/by-path/platform-xhci-hcd.0-usb-0:1:1.0-port0 
+    paramOfMicroRosAgent = [ "serial", "--dev", "/dev/serial/by-path/platform-xhci-hcd.0-usb-0:1:1.0-port0"  ]
     micro_ros_agent_node = Node(
         package="micro_ros_agent",
         executable="micro_ros_agent",
@@ -105,6 +107,6 @@ def generate_launch_description():
         robot_ros_launch,
         # joint_state_publisher_gui_node,
         rviz2_node,
-        # rplidar_c1_node,
+        rplidar_c1_node,
         # micro_ros_agent_node,
     ])
