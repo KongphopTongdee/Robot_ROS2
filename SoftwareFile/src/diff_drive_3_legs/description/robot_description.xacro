@@ -138,17 +138,6 @@
 
 
     <!-- **********Coding here********** -->
-    <!-- Create the world_link was emptry -->
-    <link name="world"></link>
-
-
-    <!-- Create the base_joint was fix on the ground -->
-    <joint name="base_joint" type="fixed">
-        <origin xyz="${xOriBaseJoint} ${yOriBaseJoint} ${zOriBaseJoint}" rpy="${rollOriBaseJoint} ${pitchOriBaseJoint} ${yallOriBaseJoint}"/>
-        <parent link="base_link"/>
-        <child link="world"/>
-    </joint>
-
     <!-- Create the base_link -->
     <link name="base_link">
         <visual>

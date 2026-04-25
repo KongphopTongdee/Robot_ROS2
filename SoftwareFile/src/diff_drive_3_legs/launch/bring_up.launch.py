@@ -107,6 +107,6 @@ def generate_launch_description():
         robot_ros_launch,
         # joint_state_publisher_gui_node,
         rviz2_node,
-        rplidar_c1_node,
+        # rplidar_c1_node,
         # micro_ros_agent_node,
     ])
