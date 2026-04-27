@@ -18,8 +18,8 @@ setup(
         ( os.path.join( 'share', package_name, 'launch' ), glob( os.path.join( 'launch','*launch.[pxy][yma]*' ) ) ),
         # Add function to call path of xacro file
         (os.path.join('share', package_name, 'description'),glob( os.path.join('description','*.xacro'))),
-        # Add function to call path of config rviz2 file
-        (os.path.join('share', package_name, 'config'),glob( os.path.join('config','*.rviz'))),
+        # Add function to call path of config rviz2, yaml file
+        (os.path.join('share', package_name, 'config'),glob( os.path.join('config','*.rviz')) + glob( os.path.join( 'config', '*.yaml' ) ) ),
         # Add function to call calculate mesh
         (os.path.join('share', package_name, 'meshes'),glob('meshes/*')),
     ],
